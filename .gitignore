@@ -1,0 +1,48 @@
+# Data
+data/processed/
+data/synthetic/
+!data/raw/sample_corpus.txt
+
+# Models & Outputs
+models/
+outputs/
+mlruns/
+
+# Paper assets (generated)
+paper_assets/figures/*.png
+paper_assets/figures/*.pdf
+paper_assets/tables/*.tex
+paper_assets/tables/*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+.env.local

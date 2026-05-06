@@ -1,0 +1,156 @@
+# =============================================================================
+# BhojRAG — Default Experiment Configuration
+# =============================================================================
+# This YAML config drives all modules. Override per-experiment via CLI or
+# by creating a new config file in configs/.
+
+experiment:
+  name: "bhojrag_baseline"
+  seed: 42
+  tracking: "mlflow"            # "mlflow" | "json"
+  output_dir: "outputs"
+  mlflow_uri: "mlruns"          # local MLflow tracking directory
+
+# ---------------------------------------------------------------------------
+# Data pipeline
+# ---------------------------------------------------------------------------
+data:
+  corpus_path: "data/raw/sample_corpus.txt"
+  processed_dir: "data/processed"
+  synthetic_dir: "data/synthetic"
+  qa_pairs_path: "data/synthetic/qa_pairs.jsonl"
+
+  # Preprocessing
+  normalize_unicode: true       # NFC normalization
+  remove_urls: true
+  remove_emails: true
+  lowercase: false              # Devanagari does not benefit from lowercasing
+  min_doc_length: 20            # chars — skip very short documents
+
+  # Chunking
+  chunk_size: 256               # tokens (approximate, whitespace-split)
+  chunk_overlap: 64
+  chunking_method: "fixed"      # "fixed" | "sentence"
+
+  # Transliteration
+  transliteration:
+    enabled: true
+    source_scripts: ["latin", "devanagari"]
+    target_script: "devanagari"
+
+# ---------------------------------------------------------------------------
+# Synthetic QA generation
+# ---------------------------------------------------------------------------
+qa_generation:
+  method: "template"            # "template" | "llm"
+  num_questions_per_chunk: 2
+  llm_backend: "api"            # only used if method=llm
+  llm_model: "gemini-1.5-flash"
+  temperature: 0.7
+  max_tokens: 256
+
+# ---------------------------------------------------------------------------
+# Sparse retrieval
+# ---------------------------------------------------------------------------
+sparse:
+  method: "char_ngram_bm25"     # "word_bm25" | "char_ngram_bm25"
+  ngram_range: [2, 4]           # character n-gram range (min, max)
+  bm25_k1: 1.5
+  bm25_b: 0.75
+  top_k: 10
+
+# ---------------------------------------------------------------------------
+# Dense retrieval
+# ---------------------------------------------------------------------------
+dense:
+  model_name: "google/muril-base-cased"
+  max_seq_length: 512
+  embedding_dim: 768
+  batch_size: 32
+  normalize_embeddings: true
+  index_type: "flat"            # "flat" | "ivf" | "hnsw"
+  top_k: 10
+
+  # FAISS index params (for IVF/HNSW)
+  nlist: 100
+  nprobe: 10
+
+# ---------------------------------------------------------------------------
+# Dense fine-tuning
+# ---------------------------------------------------------------------------
+training:
+  epochs: 5
+  learning_rate: 2.0e-5
+  warmup_ratio: 0.1
+  batch_size: 16
+  eval_steps: 100
+  save_steps: 500
+  fp16: true                    # mixed precision
+  gradient_checkpointing: true
+  max_grad_norm: 1.0
+  loss: "MultipleNegativesRankingLoss"
+  output_dir: "models/muril_finetuned"
+  eval_fraction: 0.1            # fraction of QA pairs held out for validation
+
+  # Hard negative mining
+  hard_negatives:
+    enabled: false
+    num_negatives: 5
+    strategy: "bm25"            # mine hard negatives from BM25 results
+
+# ---------------------------------------------------------------------------
+# Hybrid retrieval
+# ---------------------------------------------------------------------------
+hybrid:
+  method: "rrf"                 # "rrf" | "weighted"
+  rrf_k: 60
+  sparse_weight: 0.5            # only used if method=weighted
+  dense_weight: 0.5
+  top_k: 10
+
+# ---------------------------------------------------------------------------
+# RAG generation
+# ---------------------------------------------------------------------------
+generation:
+  backend: "api"                # "api" | "local"
+  model: "gemini-1.5-flash"
+  api_base_url: null            # override for OpenAI-compatible endpoints
+  temperature: 0.3
+  max_tokens: 512
+  top_k_context: 5             # number of retrieved chunks to include in prompt
+  prompt_template: "grounded_qa"  # "grounded_qa" | "chain_of_thought" | "hindi_bridge"
+
+  # Local model settings (used when backend=local)
+  local:
+    model_name: "meta-llama/Meta-Llama-3-8B-Instruct"
+    quantization: null          # null | "4bit" | "8bit"
+    max_new_tokens: 512
+    device: "auto"
+
+# ---------------------------------------------------------------------------
+# Evaluation
+# ---------------------------------------------------------------------------
+evaluation:
+  metrics: ["mrr@10", "recall@5", "ndcg@10", "precision@5", "map"]
+  eval_data_path: "data/synthetic/qa_pairs.jsonl"
+  results_dir: "outputs/eval_results"
+  error_analysis: true
+  save_per_query: true          # save per-query retrieval results
+
+  # Ablation configurations
+  ablation:
+    ngram_sizes: [[2,3], [2,4], [2,5], [3,4], [3,5]]
+    rrf_k_values: [10, 30, 60, 100]
+    dense_models:
+      - "google/muril-base-cased"
+      # - "ai4bharat/IndicBERTv2-MLM-only"
+      # - "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
+# ---------------------------------------------------------------------------
+# Paper assets
+# ---------------------------------------------------------------------------
+paper_assets:
+  tables_dir: "paper_assets/tables"
+  figures_dir: "paper_assets/figures"
+  figure_format: "png"         # "png" | "pdf" | "svg"
+  dpi: 300
