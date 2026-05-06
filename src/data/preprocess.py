@@ -191,7 +191,7 @@ class TextPreprocessor:
 
         # Normalize chandrabindu to anusvara in some contexts
         # (conservative: only when followed by consonant)
-        text = re.sub(r"\u0901([\u0915-\u0939])", r"\u0902\1", text)
+        text = re.sub("\u0901([\u0915-\u0939])", "\u0902\\1", text)
 
         return text
 

@@ -31,7 +31,7 @@ from src.rag.llm_backends import get_llm
 logger = setup_logger(__name__)
 
 
-def build_retriever(config, chunks):
+def build_retriever(config, chunks, sparse_only=False):
     """Build the best available retriever (hybrid > dense > sparse)."""
 
     # Sparse component
@@ -41,6 +41,9 @@ def build_retriever(config, chunks):
         b=config.sparse.bm25_b,
     )
     sparse.index(chunks)
+    
+    if sparse_only:
+        return sparse
 
     # Dense component
     ft_path = Path(config.training.output_dir)
@@ -76,6 +79,7 @@ def main(
     query: str = None,
     interactive: bool = False,
     batch_path: str = None,
+    sparse_only: bool = False,
 ) -> None:
     """Run RAG generation."""
     config = load_config(config_path)
@@ -83,6 +87,8 @@ def main(
 
     logger.info("=" * 60)
     logger.info("BhojRAG — RAG Generation")
+    if sparse_only:
+        logger.info("  (SPARSE-ONLY MODE — no dense model)")
     logger.info("=" * 60)
 
     # Load chunks
@@ -105,7 +111,7 @@ def main(
 
     # Build retriever
     logger.info("Building retriever...")
-    retriever = build_retriever(config, chunks)
+    retriever = build_retriever(config, chunks, sparse_only=sparse_only)
 
     # Initialize LLM
     logger.info(f"Initializing LLM backend: {config.generation.backend}")
@@ -232,5 +238,6 @@ if __name__ == "__main__":
     parser.add_argument("--query", type=str, default=None, help="Single query")
     parser.add_argument("--interactive", action="store_true", help="Interactive mode")
     parser.add_argument("--batch", type=str, default=None, help="Batch JSONL path")
+    parser.add_argument("--sparse-only", action="store_true", help="Use only sparse retrieval")
     args = parser.parse_args()
-    main(args.config, query=args.query, interactive=args.interactive, batch_path=args.batch)
+    main(args.config, query=args.query, interactive=args.interactive, batch_path=args.batch, sparse_only=args.sparse_only)

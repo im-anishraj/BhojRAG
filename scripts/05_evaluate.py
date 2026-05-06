@@ -46,13 +46,19 @@ def load_chunks(processed_dir: str):
     ]
 
 
-def main(config_path: str = "configs/default.yaml", dry_run: bool = False) -> None:
+def main(
+    config_path: str = "configs/default.yaml",
+    dry_run: bool = False,
+    sparse_only: bool = False,
+) -> None:
     """Run full evaluation and ablation studies."""
     config = load_config(config_path)
     set_seed(config.experiment.seed)
 
     logger.info("=" * 60)
     logger.info("BhojRAG — Full Evaluation & Ablation")
+    if sparse_only:
+        logger.info("  (SPARSE-ONLY MODE — skipping dense retrievers)")
     logger.info("=" * 60)
 
     # Verify required files
@@ -101,55 +107,56 @@ def main(config_path: str = "configs/default.yaml", dry_run: bool = False) -> No
     ngram_bm25.index(chunks)
     retrievers["char_ngram_bm25"] = ngram_bm25
 
-    # 3. Zero-shot dense
-    logger.info("Building Zero-shot Dense...")
-    zeroshot = DenseRetriever(
-        model_name=config.dense.model_name,
-        max_seq_length=config.dense.max_seq_length,
-        batch_size=config.dense.batch_size,
-        normalize_embeddings=config.dense.normalize_embeddings,
-        name="dense_zeroshot",
-    )
-    zeroshot.index(chunks)
-    retrievers["dense_zeroshot"] = zeroshot
-
-    # 4. Fine-tuned dense (if available)
-    ft_path = Path(config.training.output_dir)
-    if ft_path.exists() and (ft_path / "config.json").exists():
-        logger.info("Building Fine-tuned Dense...")
-        finetuned = DenseRetriever(
-            model_name=str(ft_path),
+    if not sparse_only:
+        # 3. Zero-shot dense
+        logger.info("Building Zero-shot Dense...")
+        zeroshot = DenseRetriever(
+            model_name=config.dense.model_name,
             max_seq_length=config.dense.max_seq_length,
             batch_size=config.dense.batch_size,
             normalize_embeddings=config.dense.normalize_embeddings,
-            name="dense_finetuned",
+            name="dense_zeroshot",
         )
-        finetuned.index(chunks)
-        retrievers["dense_finetuned"] = finetuned
+        zeroshot.index(chunks)
+        retrievers["dense_zeroshot"] = zeroshot
 
-        # 5. Hybrid (char n-gram + fine-tuned dense)
-        logger.info("Building Hybrid (ngram + finetuned)...")
-        hybrid = HybridRetriever(
-            retrievers=[ngram_bm25, finetuned],
-            method=config.hybrid.method,
-            rrf_k=config.hybrid.rrf_k,
-            name="hybrid_rrf",
-        )
-        hybrid._indexed = True
-        retrievers["hybrid_rrf"] = hybrid
-    else:
-        logger.warning(f"No fine-tuned model at {ft_path}, skipping finetuned & hybrid")
+        # 4. Fine-tuned dense (if available)
+        ft_path = Path(config.training.output_dir)
+        if ft_path.exists() and (ft_path / "config.json").exists():
+            logger.info("Building Fine-tuned Dense...")
+            finetuned = DenseRetriever(
+                model_name=str(ft_path),
+                max_seq_length=config.dense.max_seq_length,
+                batch_size=config.dense.batch_size,
+                normalize_embeddings=config.dense.normalize_embeddings,
+                name="dense_finetuned",
+            )
+            finetuned.index(chunks)
+            retrievers["dense_finetuned"] = finetuned
 
-        # Hybrid with zero-shot as fallback
-        logger.info("Building Hybrid (ngram + zeroshot)...")
-        hybrid = HybridRetriever(
-            retrievers=[ngram_bm25, zeroshot],
-            method=config.hybrid.method,
-            rrf_k=config.hybrid.rrf_k,
-            name="hybrid_rrf_zeroshot",
-        )
-        hybrid._indexed = True
-        retrievers["hybrid_rrf_zeroshot"] = hybrid
+            # 5. Hybrid (char n-gram + fine-tuned dense)
+            logger.info("Building Hybrid (ngram + finetuned)...")
+            hybrid = HybridRetriever(
+                retrievers=[ngram_bm25, finetuned],
+                method=config.hybrid.method,
+                rrf_k=config.hybrid.rrf_k,
+                name="hybrid_rrf",
+            )
+            hybrid._indexed = True
+            retrievers["hybrid_rrf"] = hybrid
+        else:
+            logger.warning(f"No fine-tuned model at {ft_path}, skipping finetuned & hybrid")
+
+            # Hybrid with zero-shot as fallback
+            logger.info("Building Hybrid (ngram + zeroshot)...")
+            hybrid = HybridRetriever(
+                retrievers=[ngram_bm25, zeroshot],
+                method=config.hybrid.method,
+                rrf_k=config.hybrid.rrf_k,
+                name="hybrid_rrf_zeroshot",
+            )
+            hybrid._indexed = True
+            retrievers["hybrid_rrf_zeroshot"] = hybrid
 
     # ---------------------------------------------------------------
     # Run evaluation
@@ -191,22 +198,25 @@ def main(config_path: str = "configs/default.yaml", dry_run: bool = False) -> No
             output_dir=str(Path(config.evaluation.results_dir) / "error_analysis")
         )
 
-        # Compare best sparse vs best dense
+        # Compare best sparse vs best dense (skip if sparse-only)
         sparse_key = "char_ngram_bm25"
         dense_key = (
             "dense_finetuned" if "dense_finetuned" in retrievers
-            else "dense_zeroshot"
+            else "dense_zeroshot" if "dense_zeroshot" in retrievers
+            else None
         )
-
-        eval_records, gold = evaluator.load_eval_data()
-        summary = analyzer.analyze(
-            sparse=retrievers[sparse_key],
-            dense=retrievers[dense_key],
-            queries=eval_records,
-            gold=gold,
-            top_k=10,
-        )
-        logger.info(f"Error analysis summary: {json.dumps(summary, indent=2)}")
+        if dense_key is None:
+            logger.info("Skipping error analysis (no dense retriever)")
+        else:
+            eval_records, gold = evaluator.load_eval_data()
+            summary = analyzer.analyze(
+                sparse=retrievers[sparse_key],
+                dense=retrievers[dense_key],
+                queries=eval_records,
+                gold=gold,
+                top_k=10,
+            )
+            logger.info(f"Error analysis summary: {json.dumps(summary, indent=2)}")
 
     # ---------------------------------------------------------------
     # N-gram ablation
@@ -269,5 +279,9 @@ if __name__ == "__main__":
         "--dry-run", action="store_true",
         help="Verify setup without running evaluation",
     )
+    parser.add_argument(
+        "--sparse-only", action="store_true",
+        help="Evaluate only sparse retrievers (no model download)",
+    )
     args = parser.parse_args()
-    main(args.config, dry_run=args.dry_run)
+    main(args.config, dry_run=args.dry_run, sparse_only=args.sparse_only)
