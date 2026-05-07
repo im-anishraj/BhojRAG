@@ -34,6 +34,14 @@ Retrieval-Augmented Generation (RAG) systems have shown significant promise in g
 - **Precision@5** — Fraction of top-5 results that are relevant
 - **MAP** — Mean Average Precision
 
+## Results
+
+### Retrieval Comparison
+![Retrieval Comparison](paper_assets/figures/retrieval_comparison.png)
+
+### Ablation Study
+![Ablation Heatmap](paper_assets/figures/ablation_heatmap.png)
+
 ## Project Structure
 
 ```
