@@ -45,6 +45,12 @@ class TestMetrics:
         gold = {"q1": {"d1"}}
         assert metrics.mrr_at_k(results, gold, k=2) == 0.0
 
+    def test_mrr_zero_relevant_docs(self, metrics):
+        """Edge case: What if the gold set has no relevant docs for a query?"""
+        results = {"q1": ["d2", "d3"]}
+        gold = {"q1": set()} # Empty set of relevant docs
+        assert metrics.mrr_at_k(results, gold, k=5) == 0.0
+
     def test_recall_at_k(self, metrics, sample_data):
         results, gold = sample_data
         recall = metrics.recall_at_k(results, gold, k=5)
