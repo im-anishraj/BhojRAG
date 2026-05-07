@@ -1,160 +1,147 @@
-# BhojRAG: Robust Retrieval-Augmented Generation for Unstandardized Low-Resource Indic Languages
+<div align="center">
+  <h1>🌟 BhojRAG</h1>
+  <p><b>Robust Retrieval-Augmented Generation for Unstandardized Low-Resource Indic Languages</b></p>
+  
+  [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![Status](https://img.shields.io/badge/Status-Research_Prototype-success.svg)]()
+</div>
 
-## Abstract
+<br/>
 
-Retrieval-Augmented Generation (RAG) systems have shown significant promise in grounding large language model outputs, but their effectiveness collapses for low-resource languages with high orthographic variation. **BhojRAG** addresses this gap for **Bhojpuri** — an Indo-Aryan language spoken by ~50 million people across Bihar, UP, Jharkhand, and the global diaspora — which lacks standardized orthography and is severely underrepresented in multilingual NLP resources. We propose a hybrid retrieval architecture combining **character n-gram BM25** (robust to spelling variation) with **fine-tuned dense embeddings** (based on MuRIL, adapted via contrastive learning on synthetic Bhojpuri QA pairs), fused through **Reciprocal Rank Fusion (RRF)**. Our system demonstrates that character-level sparse retrieval significantly outperforms word-level BM25 for unstandardized text, that task-specific dense fine-tuning improves upon zero-shot multilingual encoders, and that hybrid fusion yields the best overall retrieval quality. The architecture is designed to be extensible to other low-resource Indic languages facing similar orthographic challenges.
+> **BhojRAG** bridges the NLP gap for **Bhojpuri** (~50 million speakers) by addressing severe semantic scarcity and orthographic inconsistency using a novel **Character N-gram BM25 + Fine-tuned MuRIL Hybrid Pipeline**.
 
-## Key Contributions
+---
 
-1. **Character n-gram BM25 for orthographic robustness**: A custom sparse retriever that tokenizes at the character n-gram level, capturing subword overlaps between spelling variants — specifically designed for unstandardized Devanagari text.
+## 📖 Overview
 
-2. **Contrastive dense retriever fine-tuning**: Fine-tuning MuRIL on synthetically generated Bhojpuri QA pairs using MultipleNegativesRankingLoss, enabling semantically-aware retrieval in a zero-resource setting.
+Retrieval-Augmented Generation (RAG) systems have shown significant promise in grounding LLM outputs. However, their effectiveness collapses for low-resource languages with high spelling variation. 
 
-3. **Hybrid RRF fusion**: Combining orthography-robust sparse retrieval with semantics-aware dense retrieval via Reciprocal Rank Fusion, achieving complementary coverage.
+**BhojRAG** solves this for Bhojpuri — a language lacking standardized orthography — by introducing a hybrid architecture:
+1. **Character n-gram BM25:** Robust to arbitrary spelling variations (e.g., *भोजपूरी* vs *भोजपुरी*).
+2. **Fine-Tuned MuRIL Embeddings:** Adapted via contrastive learning on synthetic Bhojpuri QA pairs.
+3. **Reciprocal Rank Fusion (RRF):** Fusing sparse and dense methods to achieve state-of-the-art complementary coverage.
 
-4. **Hindi-bridge prompting**: A novel RAG prompting strategy that leverages Hindi as a reasoning bridge for Bhojpuri, exploiting linguistic proximity to improve generation quality.
+## 🚀 Key Contributions
 
-5. **Reproducible low-resource NLP research framework**: A modular, config-driven codebase with comprehensive evaluation, ablation studies, error analysis, and paper-ready outputs.
+- 🔠 **Orthographic Robustness:** A custom sparse retriever tokenizing at the character n-gram level to capture subword overlaps between spelling variants.
+- 🧠 **Zero-Resource Contrastive Fine-Tuning:** Fine-tuning MuRIL on synthetically generated QA pairs using `MultipleNegativesRankingLoss`.
+- 🌉 **Hindi-Bridge Prompting:** A novel RAG strategy leveraging Hindi as a reasoning bridge for Bhojpuri.
+- 🔬 **Reproducible Framework:** A highly modular, config-driven pipeline built for rigorous ablation studies and extensible to other Indic languages.
 
-## Baselines
+---
 
-| System           | Description                                                    |
-| ---------------- | -------------------------------------------------------------- |
-| Word BM25        | Standard word-level BM25 (Okapi) with whitespace tokenization  |
-| Char N-gram BM25 | Character n-gram BM25 with configurable n-gram range (2-4)     |
-| Zero-shot MuRIL  | MuRIL-base-cased without fine-tuning, FAISS retrieval          |
-| Fine-tuned MuRIL | MuRIL fine-tuned on synthetic Bhojpuri QA pairs                |
-| Hybrid (RRF)     | Char n-gram BM25 + Fine-tuned MuRIL via Reciprocal Rank Fusion |
+## 📊 Evaluation & Results
 
-## Evaluation Metrics
-
-- **MRR@10** — Mean Reciprocal Rank at 10
-- **Recall@5** — Fraction of relevant documents in top-5
-- **NDCG@10** — Normalized Discounted Cumulative Gain at 10
-- **Precision@5** — Fraction of top-5 results that are relevant
-- **MAP** — Mean Average Precision
-
-## Results
+Our system demonstrates that **character-level sparse retrieval significantly outperforms word-level baselines** for unstandardized text, and hybrid fusion yields the best overall retrieval quality.
 
 ### Retrieval Comparison
-![Retrieval Comparison](paper_assets/figures/retrieval_comparison.png)
 
-### Ablation Study
-![Ablation Heatmap](paper_assets/figures/ablation_heatmap.png)
+| System | Description |
+|--------|-------------|
+| **Word BM25** | Standard Okapi BM25 (whitespace tokenization) |
+| **Char N-gram BM25** | Custom char n-gram BM25 with boundary markers |
+| **Zero-shot MuRIL** | Out-of-the-box multilingual embeddings |
+| **Fine-tuned MuRIL** | Contrastively trained on synthetic pairs |
+| **Hybrid (RRF)** | N-gram BM25 + Fine-tuned MuRIL fusion |
 
-## Project Structure
+<div align="center">
+  <img src="paper_assets/figures/retrieval_comparison.png" alt="Retrieval Comparison" width="70%"/>
+</div>
 
-```
-BhojRAG/
-├── configs/default.yaml           # Experiment configuration
-├── data/
-│   ├── raw/sample_corpus.txt      # Sample Bhojpuri corpus
-│   ├── processed/                 # Cleaned, chunked data
-│   └── synthetic/                 # Generated QA pairs
-├── models/                        # Saved model checkpoints
-├── src/
-│   ├── data/                      # Ingestion, preprocessing, chunking, QA generation
-│   ├── retrieval/                 # Sparse, dense, hybrid retrievers
-│   ├── rag/                       # Generation pipeline, prompts, LLM backends
-│   ├── eval/                      # Metrics, evaluation, error analysis, plotting
-│   └── utils/                     # Config, logging, I/O, seed control
-├── scripts/                       # Numbered experiment scripts
-├── notebooks/                     # Exploration notebooks
-├── tests/                         # Unit tests
-├── paper_assets/                  # Tables, figures, diagrams
-├── outputs/                       # Experiment results
-├── README.md
-├── requirements.txt
-└── .gitignore
-```
+### N-gram Ablation Study
 
-## Quick Start
+Determining the optimal n-gram range is critical for handling Devanagari sub-word units effectively.
 
-### 1. Setup
+<div align="center">
+  <img src="paper_assets/figures/ablation_heatmap.png" alt="Ablation Heatmap" width="70%"/>
+</div>
+
+---
+
+## ⚙️ Quick Start
+
+> [!IMPORTANT]
+> To run the complete RAG pipeline including the generation step, ensure you have your LLM API keys exported (e.g., `OPENAI_API_KEY` or `GOOGLE_API_KEY`). If no key is found, the system gracefully falls back to a **retrieval-only** mode.
+
+### 1. Installation
 
 ```bash
 git clone https://github.com/im-anishraj/BhojRAG.git
 cd BhojRAG
 python -m venv venv
-venv\Scripts\activate        # Windows
+# Windows: venv\Scripts\activate | Mac/Linux: source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Prepare Data
+### 2. Run the Full Pipeline
+
+The project is driven by `configs/default.yaml` and separated into highly logical, reproducible numbered scripts.
 
 ```bash
+# Step 1: Preprocess, clean, and chunk the raw Bhojpuri corpus
 python scripts/01_prepare_data.py --config configs/default.yaml
-```
 
-### 3. Generate Synthetic QA Pairs
-
-```bash
+# Step 2: Generate synthetic QA pairs using template techniques
 python scripts/02_generate_qa.py --config configs/default.yaml
-```
 
-### 4. Fine-tune Dense Retriever
-
-```bash
+# Step 3: Contrastively fine-tune the dense MuRIL retriever (GPU Recommended)
 python scripts/03_train_dense.py --config configs/default.yaml
-```
 
-### 5. Build Retrieval Indices
-
-```bash
+# Step 4: Build BM25 and FAISS Indices
 python scripts/04_build_indices.py --config configs/default.yaml
-```
 
-### 6. Evaluate All Retrievers
+# Step 5: Evaluate all variants (Use --sparse-only to skip dense models)
+python scripts/05_evaluate.py --config configs/default.yaml --sparse-only
 
-```bash
-python scripts/05_evaluate.py --config configs/default.yaml
-```
-
-### 7. Run RAG Generation
-
-```bash
+# Step 6: Test End-to-End RAG Inference
 python scripts/06_run_rag.py --config configs/default.yaml --query "भोजपुरी के इतिहास का ह?"
-```
 
-### 8. Generate Paper Assets
-
-```bash
+# Step 7: Generate Publication Assets (LaTeX tables & PNG plots)
 python scripts/07_generate_paper_assets.py --config configs/default.yaml
 ```
 
-## Configuration
+---
 
-All experiments are driven by YAML config files in `configs/`. The default config (`configs/default.yaml`) provides sensible defaults. Override for specific experiments:
+## 📁 Repository Architecture
 
-```bash
-python scripts/05_evaluate.py --config configs/ablation_ngram.yaml
+```text
+BhojRAG/
+├── configs/               # YAML experiment configurations
+├── data/                  # Raw corpus, processed chunks, synthetic QA
+├── models/                # FAISS indices & saved model checkpoints
+├── paper_assets/          # Generated LaTeX tables and Matplotlib figures
+├── scripts/               # Sequenced execution scripts (01 to 07)
+├── src/
+│   ├── data/              # Ingestion, transliteration, chunking
+│   ├── eval/              # MRR/NDCG metrics, Multi-retriever Benchmarking
+│   ├── rag/               # LLM Generation, Prompts, Backends
+│   ├── retrieval/         # N-gram BM25, MuRIL Dense, RRF Hybrid
+│   └── utils/             # Config parsing, MLflow logging, reproducibility
+└── tests/                 # Comprehensive Pytest suite
 ```
 
-Key config sections: `data`, `sparse`, `dense`, `training`, `hybrid`, `generation`, `evaluation`.
+---
 
-## Experiment Tracking
+## 🎯 Target Venues
 
-- **MLflow** (default): Results tracked in `mlruns/`. View with `mlflow ui`.
-- **JSON fallback**: Every run saves a JSON record in `outputs/`.
+This framework is built for academic submission. Potential targets include:
+- **ACL / EMNLP / NAACL** (Findings track)
+- **LREC-COLING**
+- **Workshop:** AfricaNLP / LowResourceNLP / VarDial
 
-## Target Venues
+## 📝 License & Citation
 
-- ACL / EMNLP / NAACL (Findings track)
-- LREC-COLING
-- AACL-IJCNLP
-- Workshop: AfricaNLP / LowResourceNLP / VarDial
-
-## License
-
-MIT License
-
-## Citation
+This project is licensed under the **MIT License**.
 
 ```bibtex
 @misc{bhojrag2026,
   title={BhojRAG: Robust Retrieval-Augmented Generation for Unstandardized Low-Resource Indic Languages},
-  author={Your Name},
+  author={Anish Raj},
   year={2026},
-  howpublished={\url{https://github.com/yourusername/BhojRAG}}
+  howpublished={\url{https://github.com/im-anishraj/BhojRAG}}
 }
 ```
+<div align="center">
+  <i>Built with ❤️ for Low-Resource Indic NLP</i>
+</div>
