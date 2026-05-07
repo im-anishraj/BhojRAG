@@ -9,10 +9,7 @@ outputs/
 mlruns/
 
 # Paper assets (generated)
-paper_assets/figures/*.png
-paper_assets/figures/*.pdf
-paper_assets/tables/*.tex
-paper_assets/tables/*.csv
+# (Allowed to be tracked so they can appear in README)
 
 # Python
 __pycache__/
