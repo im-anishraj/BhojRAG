@@ -121,3 +121,13 @@ class TestCharNgramBM25:
         assert "b$" in ngrams
         assert "^c" in ngrams
         assert "d$" in ngrams
+
+    def test_empty_string_ngram(self):
+        """Ensure tokenizer doesn't crash on empty strings."""
+        retriever = CharNgramBM25Retriever(ngram_range=(2, 3))
+        ngrams = retriever._extract_ngrams("")
+        assert len(ngrams) == 0
+
+        # Also test retrieval with empty query
+        results = retriever.retrieve("", top_k=3)
+        assert isinstance(results, list)
