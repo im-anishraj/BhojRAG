@@ -289,8 +289,4 @@ class RetrieverEvaluator:
 
         logger.info(
             f"Saved detailed results to {output_path}"
-<<<<<<< HEAD
         )
-=======
-        )
->>>>>>> e5fcb8a8c5d18c5c4d50d879eff6cfc76d3d42ae

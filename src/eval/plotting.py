@@ -165,22 +165,31 @@ class ResultPlotter:
 
         ensure_dir(self.output_dir)
 
-        labels = ["Both Succeed", "Sparse Only", "Dense Only", "Both Fail"]
-        sizes = [
+        raw_labels = ["Both Succeed", "Sparse Only", "Dense Only", "Both Fail"]
+        raw_sizes = [
             summary.get("both_succeed", 0),
             summary.get("sparse_only_wins", 0),
             summary.get("dense_only_wins", 0),
             summary.get("both_fail", 0),
         ]
-        colors = ["#2ecc71", "#3498db", "#e74c3c", "#95a5a6"]
-        explode = (0.05, 0.05, 0.05, 0.05)
+        raw_colors = ["#2ecc71", "#3498db", "#e74c3c", "#95a5a6"]
+        
+        # Filter out zero values to avoid label overlap
+        labels = [l for l, s in zip(raw_labels, raw_sizes) if s > 0]
+        sizes = [s for s in raw_sizes if s > 0]
+        colors = [c for c, s in zip(raw_colors, raw_sizes) if s > 0]
+        explode = tuple(0.05 for _ in sizes)
 
         fig, ax = plt.subplots(figsize=(8, 8))
-        ax.pie(
-            sizes, explode=explode, labels=labels, colors=colors,
-            autopct="%1.1f%%", shadow=True, startangle=140,
-            textprops={"fontsize": 11},
-        )
+        if not sizes:
+            ax.text(0.5, 0.5, "No Data", ha="center", va="center", fontsize=14)
+            ax.axis('off')
+        else:
+            ax.pie(
+                sizes, explode=explode, labels=labels, colors=colors,
+                autopct="%1.1f%%", shadow=True, startangle=140,
+                textprops={"fontsize": 11},
+            )
         ax.set_title(title, fontsize=14, fontweight="bold")
         plt.tight_layout()
 
