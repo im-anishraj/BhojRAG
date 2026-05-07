@@ -5,6 +5,7 @@
 
   [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
   [![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+  [![Build](https://github.com/im-anishraj/BhojRAG/actions/workflows/ci.yml/badge.svg)](https://github.com/im-anishraj/BhojRAG/actions/workflows/ci.yml)
   [![NLP](https://img.shields.io/badge/Domain-NLP-orange.svg?style=flat-square)]()
   [![RAG](https://img.shields.io/badge/Task-RAG-purple.svg?style=flat-square)]()
   [![Retrieval](https://img.shields.io/badge/Task-Information_Retrieval-red.svg?style=flat-square)]()
