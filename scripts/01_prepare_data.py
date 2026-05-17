@@ -15,13 +15,13 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.utils.config import load_config
-from src.utils.seed import set_seed
-from src.utils.logger import setup_logger
-from src.utils.io import save_jsonl, ensure_dir
+from src.data.chunker import CorpusChunker
 from src.data.ingest import DocumentLoader
 from src.data.preprocess import TextPreprocessor
-from src.data.chunker import CorpusChunker
+from src.utils.config import load_config
+from src.utils.io import ensure_dir, save_jsonl
+from src.utils.logger import setup_logger
+from src.utils.seed import set_seed
 
 logger = setup_logger(__name__)
 
@@ -132,7 +132,9 @@ def main(config_path: str = "configs/default.yaml") -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BhojRAG Data Preparation")
     parser.add_argument(
-        "--config", type=str, default="configs/default.yaml",
+        "--config",
+        type=str,
+        default="configs/default.yaml",
         help="Path to config file",
     )
     args = parser.parse_args()

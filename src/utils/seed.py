@@ -13,11 +13,11 @@ import torch
 def set_seed(seed: int = 42) -> None:
     """
     Set random seed for reproducibility across all frameworks.
-    
+
     Also enables deterministic CuDNN behavior, which may
     slightly reduce GPU throughput but ensures bitwise
     reproducibility across runs.
-    
+
     Args:
         seed: Integer seed value.
     """

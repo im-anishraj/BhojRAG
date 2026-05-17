@@ -3,9 +3,8 @@ Unit tests for configuration system.
 """
 
 import pytest
-import tempfile
-from pathlib import Path
-from src.utils.config import load_config, merge_configs, ExperimentConfig
+
+from src.utils.config import ExperimentConfig, load_config, merge_configs
 
 
 class TestConfig:

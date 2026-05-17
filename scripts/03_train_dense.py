@@ -14,10 +14,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.utils.config import load_config
-from src.utils.seed import set_seed
-from src.utils.logger import setup_logger, ExperimentTracker
 from src.retrieval.dense_trainer import DenseTrainer
+from src.utils.config import load_config
+from src.utils.logger import ExperimentTracker, setup_logger
+from src.utils.seed import set_seed
 
 logger = setup_logger(__name__)
 
@@ -35,8 +35,7 @@ def main(config_path: str = "configs/default.yaml") -> None:
     qa_path = Path(config.data.qa_pairs_path)
     if not qa_path.exists():
         logger.error(
-            f"QA pairs not found: {qa_path}\n"
-            "Run scripts/02_generate_qa.py first."
+            f"QA pairs not found: {qa_path}\n" "Run scripts/02_generate_qa.py first."
         )
         sys.exit(1)
 
@@ -89,7 +88,9 @@ def main(config_path: str = "configs/default.yaml") -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BhojRAG Dense Training")
     parser.add_argument(
-        "--config", type=str, default="configs/default.yaml",
+        "--config",
+        type=str,
+        default="configs/default.yaml",
         help="Path to config file",
     )
     args = parser.parse_args()

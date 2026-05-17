@@ -11,22 +11,21 @@ Usage:
 """
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.utils.config import load_config
-from src.utils.seed import set_seed
-from src.utils.logger import setup_logger
-from src.utils.io import load_jsonl, save_jsonl, ensure_dir
 from src.data.chunker import Chunk
-from src.retrieval.sparse_ngram_bm25 import CharNgramBM25Retriever
-from src.retrieval.dense_retriever import DenseRetriever
-from src.retrieval.hybrid import HybridRetriever
 from src.rag.generator import RAGGenerator
 from src.rag.llm_backends import get_llm
+from src.retrieval.dense_retriever import DenseRetriever
+from src.retrieval.hybrid import HybridRetriever
+from src.retrieval.sparse_ngram_bm25 import CharNgramBM25Retriever
+from src.utils.config import load_config
+from src.utils.io import ensure_dir, load_jsonl, save_jsonl
+from src.utils.logger import setup_logger
+from src.utils.seed import set_seed
 
 logger = setup_logger(__name__)
 
@@ -41,7 +40,7 @@ def build_retriever(config, chunks, sparse_only=False):
         b=config.sparse.bm25_b,
     )
     sparse.index(chunks)
-    
+
     if sparse_only:
         return sparse
 
@@ -101,8 +100,11 @@ def main(
     records = load_jsonl(str(chunks_path))
     chunks = [
         Chunk(
-            chunk_id=r["chunk_id"], text=r["text"], doc_id=r["doc_id"],
-            source=r["source"], chunk_index=r["chunk_index"],
+            chunk_id=r["chunk_id"],
+            text=r["text"],
+            doc_id=r["doc_id"],
+            source=r["source"],
+            chunk_index=r["chunk_index"],
             metadata=r.get("metadata", {}),
         )
         for r in records
@@ -178,7 +180,7 @@ def main(
             if llm:
                 response = generator.generate(user_query)
                 print(f"\n📝 Answer:\n{response.answer}")
-                print(f"\n📚 Sources:")
+                print("\n📚 Sources:")
                 for s in response.sources[:3]:
                     print(f"  [{s.rank}] {s.text[:80]}...")
             else:
@@ -202,13 +204,14 @@ def main(
                 responses.append(resp.to_dict())
             else:
                 results = retriever.retrieve(q, top_k=5)
-                responses.append({
-                    "query": q,
-                    "retrieved": [
-                        {"chunk_id": r.chunk_id, "score": r.score}
-                        for r in results
-                    ],
-                })
+                responses.append(
+                    {
+                        "query": q,
+                        "retrieved": [
+                            {"chunk_id": r.chunk_id, "score": r.score} for r in results
+                        ],
+                    }
+                )
             if (i + 1) % 10 == 0:
                 logger.info(f"  Processed {i+1}/{len(queries)} queries")
 
@@ -238,6 +241,14 @@ if __name__ == "__main__":
     parser.add_argument("--query", type=str, default=None, help="Single query")
     parser.add_argument("--interactive", action="store_true", help="Interactive mode")
     parser.add_argument("--batch", type=str, default=None, help="Batch JSONL path")
-    parser.add_argument("--sparse-only", action="store_true", help="Use only sparse retrieval")
+    parser.add_argument(
+        "--sparse-only", action="store_true", help="Use only sparse retrieval"
+    )
     args = parser.parse_args()
-    main(args.config, query=args.query, interactive=args.interactive, batch_path=args.batch, sparse_only=args.sparse_only)
+    main(
+        args.config,
+        query=args.query,
+        interactive=args.interactive,
+        batch_path=args.batch,
+        sparse_only=args.sparse_only,
+    )

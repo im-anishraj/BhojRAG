@@ -20,12 +20,12 @@ def setup_logger(
 ) -> logging.Logger:
     """
     Create a configured logger with console and optional file output.
-    
+
     Args:
         name: Logger name (typically module name).
         log_file: Optional path to log file.
         level: Logging level.
-        
+
     Returns:
         Configured logging.Logger instance.
     """
@@ -62,7 +62,7 @@ def setup_logger(
 class ExperimentTracker:
     """
     Unified experiment tracker that supports MLflow or JSON fallback.
-    
+
     Usage:
         tracker = ExperimentTracker(
             experiment_name="dense_baseline",
@@ -94,13 +94,12 @@ class ExperimentTracker:
         if self.mode == "mlflow":
             try:
                 import mlflow
+
                 mlflow.set_tracking_uri(mlflow_uri)
                 mlflow.set_experiment(experiment_name)
                 self._mlflow = mlflow
             except ImportError:
-                logging.warning(
-                    "MLflow not installed. Falling back to JSON tracking."
-                )
+                logging.warning("MLflow not installed. Falling back to JSON tracking.")
                 self.mode = "json"
 
         self.logger = setup_logger(
@@ -139,7 +138,9 @@ class ExperimentTracker:
         self.logger.info(f"Params: {params}")
 
     def log_metrics(
-        self, metrics: Dict[str, float], step: Optional[int] = None,
+        self,
+        metrics: Dict[str, float],
+        step: Optional[int] = None,
     ) -> None:
         """Log evaluation metrics for the current run."""
         if not self._run_active:
@@ -176,15 +177,11 @@ class ExperimentTracker:
             self._mlflow.end_run()
 
         # Always save a JSON record as backup
-        run_file = (
-            self.output_dir / f"{self._run_data['run_name']}.json"
-        )
+        run_file = self.output_dir / f"{self._run_data['run_name']}.json"
         with open(run_file, "w", encoding="utf-8") as f:
             json.dump(self._run_data, f, indent=2, ensure_ascii=False)
 
-        self.logger.info(
-            f"Run ended: {self._run_data['run_name']} → {run_file}"
-        )
+        self.logger.info(f"Run ended: {self._run_data['run_name']} → {run_file}")
 
     def get_run_data(self) -> Dict[str, Any]:
         """Return the current run's accumulated data."""

@@ -7,12 +7,11 @@ dense retrieval compensates.
 """
 
 import json
-from collections import Counter
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Set
 
-from src.retrieval.base import BaseRetriever, RetrievalResult
-from src.utils.io import save_jsonl, ensure_dir
+from src.retrieval.base import BaseRetriever
+from src.utils.io import ensure_dir, save_jsonl
 from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -21,14 +20,14 @@ logger = setup_logger(__name__)
 class ErrorAnalyzer:
     """
     Analyze retrieval failures and system disagreements.
-    
+
     Key analyses:
         1. Failure cases: queries where no relevant doc is retrieved
         2. Sparse-only wins: relevant doc found by sparse but not dense
         3. Dense-only wins: relevant doc found by dense but not sparse
         4. Agreement analysis: how often systems agree on top-1
         5. Rank displacement: how much ranks differ between systems
-    
+
     Usage:
         analyzer = ErrorAnalyzer(output_dir="outputs/error_analysis")
         analyzer.analyze(
@@ -50,14 +49,14 @@ class ErrorAnalyzer:
     ) -> Dict[str, Any]:
         """
         Run full error analysis comparing sparse and dense retrievers.
-        
+
         Args:
             sparse: Sparse retriever (e.g., CharNgramBM25).
             dense: Dense retriever.
             queries: List of dicts with "query_id" and "question".
             gold: Dict mapping query_id -> set of relevant chunk_ids.
             top_k: Number of results to analyze.
-            
+
         Returns:
             Summary statistics dict.
         """
@@ -79,8 +78,8 @@ class ErrorAnalyzer:
             sparse_results = sparse.retrieve(query, top_k)
             dense_results = dense.retrieve(query, top_k)
 
-            sparse_ids = set(r.chunk_id for r in sparse_results)
-            dense_ids = set(r.chunk_id for r in dense_results)
+            sparse_ids = {r.chunk_id for r in sparse_results}
+            dense_ids = {r.chunk_id for r in dense_results}
 
             sparse_hit = bool(sparse_ids & relevant)
             dense_hit = bool(dense_ids & relevant)
@@ -143,7 +142,7 @@ class ErrorAnalyzer:
         """
         Analyze how much the rank of relevant documents differs
         between sparse and dense retrievers.
-        
+
         Useful for understanding RRF fusion behavior.
         """
         displacements = []
@@ -164,17 +163,17 @@ class ErrorAnalyzer:
             for rel_id in relevant:
                 s_rank = sparse_rank_map.get(rel_id)
                 d_rank = dense_rank_map.get(rel_id)
-                displacements.append({
-                    "query_id": qid,
-                    "chunk_id": rel_id,
-                    "sparse_rank": s_rank,
-                    "dense_rank": d_rank,
-                    "displacement": (
-                        abs(s_rank - d_rank)
-                        if s_rank and d_rank
-                        else None
-                    ),
-                })
+                displacements.append(
+                    {
+                        "query_id": qid,
+                        "chunk_id": rel_id,
+                        "sparse_rank": s_rank,
+                        "dense_rank": d_rank,
+                        "displacement": (
+                            abs(s_rank - d_rank) if s_rank and d_rank else None
+                        ),
+                    }
+                )
 
         save_jsonl(displacements, self.output_dir / "rank_displacement.jsonl")
         return displacements

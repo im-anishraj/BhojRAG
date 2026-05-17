@@ -25,16 +25,16 @@ logger = setup_logger(__name__)
 class DenseRetriever(BaseRetriever):
     """
     Dense retriever using a sentence-transformer model with FAISS index.
-    
+
     Encodes corpus chunks into dense vectors, builds a FAISS index,
     and retrieves by cosine similarity.
-    
+
     Supports:
         - Any sentence-transformers compatible model
         - Zero-shot (pretrained) or fine-tuned models
         - FAISS IndexFlatIP (exact search) or IVF (approximate)
         - Index save/load for persistence
-    
+
     Usage:
         retriever = DenseRetriever(model_name="google/muril-base-cased")
         retriever.index(chunks)
@@ -78,9 +78,7 @@ class DenseRetriever(BaseRetriever):
         from sentence_transformers import SentenceTransformer
 
         logger.info(f"Loading model: {self.model_name} on {self.device}")
-        self._model = SentenceTransformer(
-            self.model_name, device=self.device
-        )
+        self._model = SentenceTransformer(self.model_name, device=self.device)
         self._model.max_seq_length = self.max_seq_length
         self._embedding_dim = self._model.get_sentence_embedding_dimension()
         logger.info(
@@ -103,7 +101,7 @@ class DenseRetriever(BaseRetriever):
     def index(self, chunks: List[Chunk]) -> None:
         """
         Build FAISS index from corpus chunk embeddings.
-        
+
         Args:
             chunks: List of Chunk objects to index.
         """
@@ -148,23 +146,25 @@ class DenseRetriever(BaseRetriever):
 
         results = []
         for rank, (idx, score) in enumerate(
-            zip(indices[0], scores[0]), 1
+            zip(indices[0], scores[0], strict=False), 1
         ):
             if idx < 0:  # FAISS returns -1 for insufficient results
                 break
             chunk = self._corpus[idx]
-            results.append(RetrievalResult(
-                chunk_id=chunk.chunk_id,
-                text=chunk.text,
-                score=float(score),
-                rank=rank,
-                source=chunk.source,
-                metadata={
-                    **chunk.metadata,
-                    "retriever": self.name,
-                    "model": self.model_name,
-                },
-            ))
+            results.append(
+                RetrievalResult(
+                    chunk_id=chunk.chunk_id,
+                    text=chunk.text,
+                    score=float(score),
+                    rank=rank,
+                    source=chunk.source,
+                    metadata={
+                        **chunk.metadata,
+                        "retriever": self.name,
+                        "model": self.model_name,
+                    },
+                )
+            )
         return results
 
     def batch_retrieve(
@@ -181,22 +181,24 @@ class DenseRetriever(BaseRetriever):
         for q_idx in range(len(queries)):
             results = []
             for rank, (idx, score) in enumerate(
-                zip(indices[q_idx], scores[q_idx]), 1
+                zip(indices[q_idx], scores[q_idx], strict=False), 1
             ):
                 if idx < 0:
                     break
                 chunk = self._corpus[idx]
-                results.append(RetrievalResult(
-                    chunk_id=chunk.chunk_id,
-                    text=chunk.text,
-                    score=float(score),
-                    rank=rank,
-                    source=chunk.source,
-                    metadata={
-                        **chunk.metadata,
-                        "retriever": self.name,
-                    },
-                ))
+                results.append(
+                    RetrievalResult(
+                        chunk_id=chunk.chunk_id,
+                        text=chunk.text,
+                        score=float(score),
+                        rank=rank,
+                        source=chunk.source,
+                        metadata={
+                            **chunk.metadata,
+                            "retriever": self.name,
+                        },
+                    )
+                )
             all_results.append(results)
         return all_results
 

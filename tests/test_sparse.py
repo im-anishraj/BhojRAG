@@ -3,6 +3,7 @@ Unit tests for sparse retrieval modules.
 """
 
 import pytest
+
 from src.data.chunker import Chunk
 from src.retrieval.sparse_bm25 import WordBM25Retriever
 from src.retrieval.sparse_ngram_bm25 import CharNgramBM25Retriever
@@ -13,20 +14,32 @@ def sample_chunks():
     """Create sample Bhojpuri chunks for testing."""
     return [
         Chunk(
-            chunk_id="c_0001", text="भोजपुरी भाषा बिहार में बोलल जाला",
-            doc_id="d1", source="test", chunk_index=0,
+            chunk_id="c_0001",
+            text="भोजपुरी भाषा बिहार में बोलल जाला",
+            doc_id="d1",
+            source="test",
+            chunk_index=0,
         ),
         Chunk(
-            chunk_id="c_0002", text="छठ पूजा भोजपुरी संस्कृति के त्यौहार बा",
-            doc_id="d2", source="test", chunk_index=0,
+            chunk_id="c_0002",
+            text="छठ पूजा भोजपुरी संस्कृति के त्यौहार बा",
+            doc_id="d2",
+            source="test",
+            chunk_index=0,
         ),
         Chunk(
-            chunk_id="c_0003", text="लिट्टी चोखा भोजपुरी के प्रसिद्ध खाना बा",
-            doc_id="d3", source="test", chunk_index=0,
+            chunk_id="c_0003",
+            text="लिट्टी चोखा भोजपुरी के प्रसिद्ध खाना बा",
+            doc_id="d3",
+            source="test",
+            chunk_index=0,
         ),
         Chunk(
-            chunk_id="c_0004", text="भोजपूरी भासा बहुत पुरान बा",
-            doc_id="d4", source="test", chunk_index=0,
+            chunk_id="c_0004",
+            text="भोजपूरी भासा बहुत पुरान बा",
+            doc_id="d4",
+            source="test",
+            chunk_index=0,
             metadata={"note": "alternate spelling"},
         ),
     ]
@@ -74,7 +87,7 @@ class TestCharNgramBM25:
         """
         Core research claim: char n-gram BM25 should be more robust
         to spelling variations than word BM25.
-        
+
         Query uses "भोजपूरी" (variant) instead of "भोजपुरी" (standard).
         Char n-gram should still find relevant results due to n-gram overlap.
         """
@@ -86,7 +99,6 @@ class TestCharNgramBM25:
 
         variant_query = "भोजपूरी भासा"  # Non-standard spelling
 
-        word_results = word_retriever.retrieve(variant_query, top_k=4)
         ngram_results = ngram_retriever.retrieve(variant_query, top_k=4)
 
         # n-gram retriever should have higher scores for variant queries
@@ -95,9 +107,9 @@ class TestCharNgramBM25:
 
         # The variant spelling doc (c_0004) should rank higher in n-gram
         ngram_ids = [r.chunk_id for r in ngram_results]
-        assert "c_0004" in ngram_ids, (
-            "Char n-gram BM25 should find the variant spelling chunk"
-        )
+        assert (
+            "c_0004" in ngram_ids
+        ), "Char n-gram BM25 should find the variant spelling chunk"
 
     def test_configurable_ngram_range(self, sample_chunks):
         retriever_2_3 = CharNgramBM25Retriever(ngram_range=(2, 3))
@@ -122,12 +134,13 @@ class TestCharNgramBM25:
         assert "^c" in ngrams
         assert "d$" in ngrams
 
-    def test_empty_string_ngram(self):
+    def test_empty_string_ngram(self, sample_chunks):
         """Ensure tokenizer doesn't crash on empty strings."""
         retriever = CharNgramBM25Retriever(ngram_range=(2, 3))
         ngrams = retriever._extract_ngrams("")
         assert len(ngrams) == 0
 
         # Also test retrieval with empty query
+        retriever.index(sample_chunks)
         results = retriever.retrieve("", top_k=3)
         assert isinstance(results, list)

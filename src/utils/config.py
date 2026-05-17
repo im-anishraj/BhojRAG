@@ -5,19 +5,20 @@ Type-safe YAML configuration parsing using Pydantic v2.
 Supports nested configs, defaults, and validation.
 """
 
-import yaml
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Literal
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
-from pydantic import BaseModel, Field, field_validator
-
+import yaml
+from pydantic import BaseModel, field_validator
 
 # ---------------------------------------------------------------------------
 # Sub-configs
 # ---------------------------------------------------------------------------
 
+
 class TransliterationConfig(BaseModel):
     """Transliteration settings for handling Latin/Hinglish Bhojpuri."""
+
     enabled: bool = True
     source_scripts: List[str] = ["latin", "devanagari"]
     target_script: str = "devanagari"
@@ -25,6 +26,7 @@ class TransliterationConfig(BaseModel):
 
 class DataConfig(BaseModel):
     """Data pipeline configuration."""
+
     corpus_path: str = "data/raw/sample_corpus.txt"
     processed_dir: str = "data/processed"
     synthetic_dir: str = "data/synthetic"
@@ -45,6 +47,7 @@ class DataConfig(BaseModel):
 
 class QAGenerationConfig(BaseModel):
     """Synthetic QA generation settings."""
+
     method: Literal["template", "llm"] = "template"
     num_questions_per_chunk: int = 2
     llm_backend: str = "api"
@@ -55,6 +58,7 @@ class QAGenerationConfig(BaseModel):
 
 class SparseConfig(BaseModel):
     """Sparse retriever configuration."""
+
     method: Literal["word_bm25", "char_ngram_bm25"] = "char_ngram_bm25"
     ngram_range: Tuple[int, int] = (2, 4)
     bm25_k1: float = 1.5
@@ -72,6 +76,7 @@ class SparseConfig(BaseModel):
 
 class DenseConfig(BaseModel):
     """Dense retriever configuration."""
+
     model_name: str = "google/muril-base-cased"
     max_seq_length: int = 512
     embedding_dim: int = 768
@@ -85,6 +90,7 @@ class DenseConfig(BaseModel):
 
 class HardNegativeConfig(BaseModel):
     """Hard negative mining settings for contrastive training."""
+
     enabled: bool = False
     num_negatives: int = 5
     strategy: str = "bm25"
@@ -92,6 +98,7 @@ class HardNegativeConfig(BaseModel):
 
 class TrainingConfig(BaseModel):
     """Dense retriever fine-tuning configuration."""
+
     epochs: int = 5
     learning_rate: float = 2e-5
     warmup_ratio: float = 0.1
@@ -109,6 +116,7 @@ class TrainingConfig(BaseModel):
 
 class HybridConfig(BaseModel):
     """Hybrid retriever (RRF) configuration."""
+
     method: Literal["rrf", "weighted"] = "rrf"
     rrf_k: int = 60
     sparse_weight: float = 0.5
@@ -118,6 +126,7 @@ class HybridConfig(BaseModel):
 
 class LocalModelConfig(BaseModel):
     """Local LLM settings for RAG generation."""
+
     model_name: str = "meta-llama/Meta-Llama-3-8B-Instruct"
     quantization: Optional[str] = None
     max_new_tokens: int = 512
@@ -126,20 +135,22 @@ class LocalModelConfig(BaseModel):
 
 class GenerationConfig(BaseModel):
     """RAG generation configuration."""
+
     backend: Literal["api", "local"] = "api"
     model: str = "gemini-1.5-flash"
     api_base_url: Optional[str] = None
     temperature: float = 0.3
     max_tokens: int = 512
     top_k_context: int = 5
-    prompt_template: Literal[
-        "grounded_qa", "chain_of_thought", "hindi_bridge"
-    ] = "grounded_qa"
+    prompt_template: Literal["grounded_qa", "chain_of_thought", "hindi_bridge"] = (
+        "grounded_qa"
+    )
     local: LocalModelConfig = LocalModelConfig()
 
 
 class AblationConfig(BaseModel):
     """Ablation study parameters."""
+
     ngram_sizes: List[List[int]] = [[2, 3], [2, 4], [2, 5], [3, 4], [3, 5]]
     rrf_k_values: List[int] = [10, 30, 60, 100]
     dense_models: List[str] = ["google/muril-base-cased"]
@@ -147,6 +158,7 @@ class AblationConfig(BaseModel):
 
 class EvaluationConfig(BaseModel):
     """Evaluation and ablation configuration."""
+
     metrics: List[str] = ["mrr@10", "recall@5", "ndcg@10", "precision@5", "map"]
     eval_data_path: str = "data/synthetic/qa_pairs.jsonl"
     results_dir: str = "outputs/eval_results"
@@ -157,6 +169,7 @@ class EvaluationConfig(BaseModel):
 
 class PaperAssetsConfig(BaseModel):
     """Paper asset generation settings."""
+
     tables_dir: str = "paper_assets/tables"
     figures_dir: str = "paper_assets/figures"
     figure_format: str = "png"
@@ -165,6 +178,7 @@ class PaperAssetsConfig(BaseModel):
 
 class ExperimentMeta(BaseModel):
     """Top-level experiment metadata."""
+
     name: str = "bhojrag_baseline"
     seed: int = 42
     tracking: Literal["mlflow", "json"] = "mlflow"
@@ -176,14 +190,16 @@ class ExperimentMeta(BaseModel):
 # Root config
 # ---------------------------------------------------------------------------
 
+
 class ExperimentConfig(BaseModel):
     """
     Root configuration aggregating all sub-configs.
-    
+
     Usage:
         config = load_config("configs/default.yaml")
         print(config.dense.model_name)
     """
+
     experiment: ExperimentMeta = ExperimentMeta()
     data: DataConfig = DataConfig()
     qa_generation: QAGenerationConfig = QAGenerationConfig()
@@ -200,16 +216,17 @@ class ExperimentConfig(BaseModel):
 # Loader
 # ---------------------------------------------------------------------------
 
+
 def load_config(config_path: str | Path) -> ExperimentConfig:
     """
     Load and validate a YAML configuration file.
-    
+
     Args:
         config_path: Path to the YAML config file.
-        
+
     Returns:
         Validated ExperimentConfig instance.
-        
+
     Raises:
         FileNotFoundError: If config file does not exist.
         pydantic.ValidationError: If config values fail validation.
@@ -231,11 +248,11 @@ def merge_configs(
     """
     Merge override dict into a base config.
     Useful for CLI-driven experiment sweeps.
-    
+
     Args:
         base: Base configuration.
         overrides: Flat or nested dict of overrides.
-        
+
     Returns:
         New ExperimentConfig with overrides applied.
     """

@@ -17,7 +17,7 @@ from typing import List
 class PromptTemplates:
     """
     Prompt template manager for RAG generation.
-    
+
     Each template takes a query and list of context passages,
     returns a formatted prompt string ready for LLM consumption.
     """
@@ -26,7 +26,7 @@ class PromptTemplates:
     def grounded_qa(query: str, contexts: List[str]) -> str:
         """
         Standard grounded QA prompt.
-        
+
         Instructs the LLM to answer strictly from the provided context
         and explicitly state when information is insufficient.
         """
@@ -34,8 +34,8 @@ class PromptTemplates:
             f"[Source {i+1}]\n{ctx}" for i, ctx in enumerate(contexts)
         )
 
-        return f"""You are a knowledgeable assistant specializing in Bhojpuri language and culture. 
-Answer the question ONLY using the provided context passages. 
+        return f"""You are a knowledgeable assistant specializing in Bhojpuri language and culture.
+Answer the question ONLY using the provided context passages.
 
 STRICT RULES:
 - Do NOT use any information outside the provided context.
@@ -54,7 +54,7 @@ ANSWER:"""
     def chain_of_thought(query: str, contexts: List[str]) -> str:
         """
         Chain-of-thought prompt for complex reasoning.
-        
+
         Guides the LLM through step-by-step reasoning over
         multiple context passages before generating a final answer.
         """
@@ -79,9 +79,9 @@ PASSAGES:
 QUESTION: {query}
 
 STEP-BY-STEP REASONING:
-- Relevant passages: 
-- Key information: 
-- Reasoning: 
+- Relevant passages:
+- Key information:
+- Reasoning:
 
 FINAL ANSWER:"""
 
@@ -89,13 +89,13 @@ FINAL ANSWER:"""
     def hindi_bridge(query: str, contexts: List[str]) -> str:
         """
         Hindi-bridge prompt for cross-lingual reasoning.
-        
+
         Since LLMs typically reason better in Hindi than Bhojpuri,
         this prompt:
         1. Presents Bhojpuri context
         2. Asks the model to internally reason in Hindi
         3. Produces a response that is Bhojpuri-aware
-        
+
         This is a key research contribution: using Hindi as a
         reasoning bridge for low-resource Bhojpuri.
         """
@@ -125,10 +125,10 @@ FINAL ANSWER:"""
     def get_template(cls, name: str):
         """
         Get a prompt template function by name.
-        
+
         Args:
             name: One of "grounded_qa", "chain_of_thought", "hindi_bridge"
-            
+
         Returns:
             Template function.
         """
@@ -139,7 +139,6 @@ FINAL ANSWER:"""
         }
         if name not in templates:
             raise ValueError(
-                f"Unknown template: {name}. "
-                f"Available: {list(templates.keys())}"
+                f"Unknown template: {name}. " f"Available: {list(templates.keys())}"
             )
         return templates[name]

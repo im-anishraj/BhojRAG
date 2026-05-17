@@ -21,7 +21,7 @@ import math
 import pickle
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Tuple
 
 import numpy as np
 
@@ -35,11 +35,11 @@ logger = setup_logger(__name__)
 class CharNgramBM25Retriever(BaseRetriever):
     """
     BM25 retriever using character n-gram tokenization.
-    
+
     Instead of splitting text into words, each document is represented
     as a bag of character n-grams. This handles spelling variation
     naturally because similar words share n-gram overlap.
-    
+
     Parameters:
         ngram_range: Tuple (min_n, max_n) for character n-gram extraction.
         k1: BM25 term frequency saturation parameter.
@@ -68,7 +68,7 @@ class CharNgramBM25Retriever(BaseRetriever):
     def index(self, chunks: List[Chunk]) -> None:
         """
         Build character n-gram BM25 index.
-        
+
         For each chunk:
           1. Extract all character n-grams in the configured range
           2. Count n-gram frequencies (term frequency)
@@ -90,9 +90,7 @@ class CharNgramBM25Retriever(BaseRetriever):
             for ng in freq:
                 self._df[ng] += 1
 
-        self._avg_doc_length = (
-            np.mean(self._doc_lengths) if self._doc_lengths else 1.0
-        )
+        self._avg_doc_length = np.mean(self._doc_lengths) if self._doc_lengths else 1.0
         self._indexed = True
 
         logger.info(
@@ -105,9 +103,9 @@ class CharNgramBM25Retriever(BaseRetriever):
     def retrieve(self, query: str, top_k: int = 10) -> List[RetrievalResult]:
         """
         Retrieve top-k chunks using character n-gram BM25 scoring.
-        
+
         BM25 formula per n-gram q in query:
-          score(q, D) = IDF(q) * (tf(q,D) * (k1+1)) / 
+          score(q, D) = IDF(q) * (tf(q,D) * (k1+1)) /
                         (tf(q,D) + k1 * (1 - b + b * |D|/avgdl))
         """
         if not self._indexed:
@@ -118,15 +116,13 @@ class CharNgramBM25Retriever(BaseRetriever):
 
         scores = np.zeros(self._n_docs, dtype=np.float64)
 
-        for ng, qf in query_freq.items():
+        for ng in query_freq:
             if ng not in self._df:
                 continue
 
             # IDF: log((N - df + 0.5) / (df + 0.5) + 1)
             df = self._df[ng]
-            idf = math.log(
-                (self._n_docs - df + 0.5) / (df + 0.5) + 1.0
-            )
+            idf = math.log((self._n_docs - df + 0.5) / (df + 0.5) + 1.0)
 
             for doc_idx in range(self._n_docs):
                 tf = self._doc_ngram_freqs[doc_idx].get(ng, 0)
@@ -136,9 +132,8 @@ class CharNgramBM25Retriever(BaseRetriever):
                 doc_len = self._doc_lengths[doc_idx]
                 # BM25 TF component
                 tf_norm = (tf * (self.k1 + 1)) / (
-                    tf + self.k1 * (
-                        1 - self.b + self.b * doc_len / self._avg_doc_length
-                    )
+                    tf
+                    + self.k1 * (1 - self.b + self.b * doc_len / self._avg_doc_length)
                 )
                 scores[doc_idx] += idf * tf_norm
 
@@ -150,24 +145,26 @@ class CharNgramBM25Retriever(BaseRetriever):
             if scores[idx] <= 0:
                 break
             chunk = self._corpus[idx]
-            results.append(RetrievalResult(
-                chunk_id=chunk.chunk_id,
-                text=chunk.text,
-                score=float(scores[idx]),
-                rank=rank,
-                source=chunk.source,
-                metadata={
-                    **chunk.metadata,
-                    "retriever": self.name,
-                    "ngram_range": str(self.ngram_range),
-                },
-            ))
+            results.append(
+                RetrievalResult(
+                    chunk_id=chunk.chunk_id,
+                    text=chunk.text,
+                    score=float(scores[idx]),
+                    rank=rank,
+                    source=chunk.source,
+                    metadata={
+                        **chunk.metadata,
+                        "retriever": self.name,
+                        "ngram_range": str(self.ngram_range),
+                    },
+                )
+            )
         return results
 
     def _extract_ngrams(self, text: str) -> List[str]:
         """
         Extract character n-grams from text.
-        
+
         Strips whitespace before n-gram extraction so that
         word boundaries don't fragment n-grams. Adds boundary
         markers ('^' and '$') to capture word-start/end patterns.

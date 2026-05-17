@@ -9,15 +9,13 @@ Optimized for single-GPU with mixed precision and gradient checkpointing.
 """
 
 import json
-import math
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Optional
 
-import torch
 from torch.utils.data import DataLoader
 
 from src.utils.io import load_jsonl
-from src.utils.logger import setup_logger, ExperimentTracker
+from src.utils.logger import ExperimentTracker, setup_logger
 
 logger = setup_logger(__name__)
 
@@ -26,14 +24,14 @@ class DenseTrainer:
     """
     Fine-tune a sentence-transformer model on QA pairs using
     contrastive learning (MultipleNegativesRankingLoss).
-    
+
     Design choices:
         - In-batch negatives: every other QA pair in the batch
           serves as a negative, so batch_size matters.
         - Mixed precision (fp16) for GPU memory efficiency.
         - Gradient checkpointing to fit larger batches.
         - Warmup schedule for stable training.
-    
+
     Usage:
         trainer = DenseTrainer(
             model_name="google/muril-base-cased",
@@ -80,18 +78,18 @@ class DenseTrainer:
     def train(self, qa_pairs_path: str) -> str:
         """
         Fine-tune the model on synthetic QA pairs.
-        
+
         Args:
             qa_pairs_path: Path to JSONL file with QA pairs.
-            
+
         Returns:
             Path to the saved fine-tuned model.
         """
         from sentence_transformers import (
-            SentenceTransformer,
             InputExample,
-            losses,
+            SentenceTransformer,
             evaluation,
+            losses,
         )
 
         # Load data
@@ -102,14 +100,11 @@ class DenseTrainer:
         split_idx = max(1, int(len(qa_pairs) * (1 - self.eval_fraction)))
         train_pairs = qa_pairs[:split_idx]
         eval_pairs = qa_pairs[split_idx:]
-        logger.info(
-            f"Train: {len(train_pairs)}, Eval: {len(eval_pairs)}"
-        )
+        logger.info(f"Train: {len(train_pairs)}, Eval: {len(eval_pairs)}")
 
         # Prepare training examples
         train_examples = [
-            InputExample(texts=[p["question"], p["answer"]])
-            for p in train_pairs
+            InputExample(texts=[p["question"], p["answer"]]) for p in train_pairs
         ]
 
         # Load model

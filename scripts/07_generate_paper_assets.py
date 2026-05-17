@@ -16,10 +16,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.utils.config import load_config
-from src.utils.logger import setup_logger
-from src.utils.io import ensure_dir
 from src.eval.plotting import ResultPlotter
+from src.utils.config import load_config
+from src.utils.io import ensure_dir
+from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
@@ -46,9 +46,9 @@ def generate_latex_table(
         f"\\label{{{label}}}",
         "\\begin{tabular}{l" + "c" * len(metrics) + "}",
         "\\toprule",
-        "\\textbf{System} & " + " & ".join(
-            f"\\textbf{{{m}}}" for m in metrics
-        ) + " \\\\",
+        "\\textbf{System} & "
+        + " & ".join(f"\\textbf{{{m}}}" for m in metrics)
+        + " \\\\",
         "\\midrule",
     ]
 
@@ -69,11 +69,13 @@ def generate_latex_table(
         display_name = retriever.replace("_", "\\_")
         lines.append(f"{display_name} & " + " & ".join(cells) + " \\\\")
 
-    lines.extend([
-        "\\bottomrule",
-        "\\end{tabular}",
-        "\\end{table}",
-    ])
+    lines.extend(
+        [
+            "\\bottomrule",
+            "\\end{tabular}",
+            "\\end{table}",
+        ]
+    )
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:

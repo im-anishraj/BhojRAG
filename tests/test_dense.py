@@ -4,7 +4,7 @@ Tests are designed to work without a GPU (using small models).
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
+
 from src.data.chunker import Chunk
 from src.retrieval.dense_retriever import DenseRetriever
 
@@ -13,12 +13,27 @@ from src.retrieval.dense_retriever import DenseRetriever
 def sample_chunks():
     """Sample chunks for testing."""
     return [
-        Chunk(chunk_id="c_0001", text="भोजपुरी भाषा बिहार में बोलल जाला",
-              doc_id="d1", source="test", chunk_index=0),
-        Chunk(chunk_id="c_0002", text="छठ पूजा भोजपुरी संस्कृति के त्यौहार बा",
-              doc_id="d2", source="test", chunk_index=0),
-        Chunk(chunk_id="c_0003", text="लिट्टी चोखा भोजपुरी के प्रसिद्ध खाना बा",
-              doc_id="d3", source="test", chunk_index=0),
+        Chunk(
+            chunk_id="c_0001",
+            text="भोजपुरी भाषा बिहार में बोलल जाला",
+            doc_id="d1",
+            source="test",
+            chunk_index=0,
+        ),
+        Chunk(
+            chunk_id="c_0002",
+            text="छठ पूजा भोजपुरी संस्कृति के त्यौहार बा",
+            doc_id="d2",
+            source="test",
+            chunk_index=0,
+        ),
+        Chunk(
+            chunk_id="c_0003",
+            text="लिट्टी चोखा भोजपुरी के प्रसिद्ध खाना बा",
+            doc_id="d3",
+            source="test",
+            chunk_index=0,
+        ),
     ]
 
 

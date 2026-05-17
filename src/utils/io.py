@@ -8,16 +8,16 @@ All functions handle encoding and path creation automatically.
 import json
 import pickle
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 
 def load_jsonl(path: str | Path) -> List[Dict[str, Any]]:
     """
     Load a JSONL file (one JSON object per line).
-    
+
     Args:
         path: Path to the .jsonl file.
-        
+
     Returns:
         List of parsed dictionaries.
     """
@@ -31,9 +31,7 @@ def load_jsonl(path: str | Path) -> List[Dict[str, Any]]:
             try:
                 records.append(json.loads(line))
             except json.JSONDecodeError as e:
-                raise ValueError(
-                    f"Invalid JSON at {path}:{line_num}: {e}"
-                ) from e
+                raise ValueError(f"Invalid JSON at {path}:{line_num}: {e}") from e
     return records
 
 
@@ -44,7 +42,7 @@ def save_jsonl(
 ) -> None:
     """
     Save records to a JSONL file.
-    
+
     Args:
         records: List of dicts to serialize.
         path: Output file path.
@@ -61,10 +59,10 @@ def save_jsonl(
 def load_text_file(path: str | Path) -> str:
     """
     Read entire text file as a single string.
-    
+
     Args:
         path: Path to text file.
-        
+
     Returns:
         File contents as string.
     """
@@ -75,7 +73,7 @@ def load_text_file(path: str | Path) -> str:
 def save_text_file(content: str, path: str | Path) -> None:
     """
     Write string to a text file.
-    
+
     Args:
         content: Text content to write.
         path: Output file path.
@@ -88,10 +86,10 @@ def save_text_file(content: str, path: str | Path) -> None:
 def load_tsv(path: str | Path) -> List[List[str]]:
     """
     Load a TSV file as list of rows (list of strings).
-    
+
     Args:
         path: Path to TSV file.
-        
+
     Returns:
         List of rows, each row is a list of tab-separated values.
     """
@@ -112,7 +110,7 @@ def save_tsv(
 ) -> None:
     """
     Save rows to a TSV file.
-    
+
     Args:
         rows: List of rows (each row is a list of strings).
         path: Output file path.

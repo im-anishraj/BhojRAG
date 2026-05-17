@@ -9,13 +9,13 @@ combining BM25 (sparse) and dense embedding retrieval.
 
 Formula:
     RRF_score(d) = Σ_i  weight_i / (k + rank_i(d))
-    
+
 where i iterates over retrieval systems and k is a constant
 (typically 60) that smooths the contribution of lower-ranked docs.
 """
 
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from src.data.chunker import Chunk
 from src.retrieval.base import BaseRetriever, RetrievalResult
@@ -27,11 +27,11 @@ logger = setup_logger(__name__)
 class HybridRetriever(BaseRetriever):
     """
     Hybrid retriever combining multiple systems via Reciprocal Rank Fusion.
-    
+
     Supports:
         - RRF (default): rank-based fusion, no score calibration needed
         - Weighted: normalized score fusion with configurable weights
-    
+
     Usage:
         hybrid = HybridRetriever(
             retrievers=[sparse_retriever, dense_retriever],
@@ -70,7 +70,9 @@ class HybridRetriever(BaseRetriever):
             self.weights = [1.0] * len(self.retrievers)
 
     def add_retriever(
-        self, retriever: BaseRetriever, weight: float = 1.0,
+        self,
+        retriever: BaseRetriever,
+        weight: float = 1.0,
     ) -> None:
         """Add a retriever to the hybrid system."""
         self.retrievers.append(retriever)
@@ -79,7 +81,7 @@ class HybridRetriever(BaseRetriever):
     def index(self, chunks: List[Chunk]) -> None:
         """
         Build indices for all sub-retrievers.
-        
+
         Each retriever builds its own index over the same corpus.
         """
         self._corpus = chunks
@@ -89,21 +91,18 @@ class HybridRetriever(BaseRetriever):
                 retriever.index(chunks)
         self._indexed = True
         logger.info(
-            f"HybridRetriever: All {len(self.retrievers)} "
-            f"sub-retrievers indexed"
+            f"HybridRetriever: All {len(self.retrievers)} " f"sub-retrievers indexed"
         )
 
     def retrieve(self, query: str, top_k: int = 10) -> List[RetrievalResult]:
         """
         Retrieve and fuse results from all sub-retrievers.
-        
+
         Each sub-retriever returns its own top-k results.
         Results are fused via RRF or weighted combination.
         """
         if not self._indexed:
-            raise RuntimeError(
-                "Index not built. Call index() first."
-            )
+            raise RuntimeError("Index not built. Call index() first.")
 
         # Collect results from each retriever
         # Request more results from each to ensure good fusion coverage
@@ -129,7 +128,7 @@ class HybridRetriever(BaseRetriever):
     ) -> List[RetrievalResult]:
         """
         Reciprocal Rank Fusion.
-        
+
         RRF_score(d) = Σ_i  w_i / (k + rank_i(d))
         """
         # Accumulate RRF scores by chunk_id
@@ -142,9 +141,7 @@ class HybridRetriever(BaseRetriever):
             retriever_name = self.retrievers[sys_idx].name
 
             for result in results:
-                rrf_scores[result.chunk_id] += (
-                    weight / (self.rrf_k + result.rank)
-                )
+                rrf_scores[result.chunk_id] += weight / (self.rrf_k + result.rank)
                 # Keep the first occurrence (highest-ranked) for text/metadata
                 if result.chunk_id not in chunk_map:
                     chunk_map[result.chunk_id] = result
@@ -161,19 +158,21 @@ class HybridRetriever(BaseRetriever):
         fused_results = []
         for rank, chunk_id in enumerate(sorted_ids, 1):
             original = chunk_map[chunk_id]
-            fused_results.append(RetrievalResult(
-                chunk_id=chunk_id,
-                text=original.text,
-                score=rrf_scores[chunk_id],
-                rank=rank,
-                source=original.source,
-                metadata={
-                    **original.metadata,
-                    "retriever": self.name,
-                    "fusion_method": "rrf",
-                    "source_ranks": str(source_ranks[chunk_id]),
-                },
-            ))
+            fused_results.append(
+                RetrievalResult(
+                    chunk_id=chunk_id,
+                    text=original.text,
+                    score=rrf_scores[chunk_id],
+                    rank=rank,
+                    source=original.source,
+                    metadata={
+                        **original.metadata,
+                        "retriever": self.name,
+                        "fusion_method": "rrf",
+                        "source_ranks": str(source_ranks[chunk_id]),
+                    },
+                )
+            )
 
         return fused_results
 
@@ -183,7 +182,7 @@ class HybridRetriever(BaseRetriever):
     ) -> List[RetrievalResult]:
         """
         Weighted score fusion with min-max normalization.
-        
+
         Normalizes scores from each system to [0, 1] range,
         then combines with configurable weights.
         """
@@ -216,17 +215,19 @@ class HybridRetriever(BaseRetriever):
         fused_results = []
         for rank, chunk_id in enumerate(sorted_ids, 1):
             original = chunk_map[chunk_id]
-            fused_results.append(RetrievalResult(
-                chunk_id=chunk_id,
-                text=original.text,
-                score=weighted_scores[chunk_id],
-                rank=rank,
-                source=original.source,
-                metadata={
-                    **original.metadata,
-                    "retriever": self.name,
-                    "fusion_method": "weighted",
-                },
-            ))
+            fused_results.append(
+                RetrievalResult(
+                    chunk_id=chunk_id,
+                    text=original.text,
+                    score=weighted_scores[chunk_id],
+                    rank=rank,
+                    source=original.source,
+                    metadata={
+                        **original.metadata,
+                        "retriever": self.name,
+                        "fusion_method": "weighted",
+                    },
+                )
+            )
 
         return fused_results

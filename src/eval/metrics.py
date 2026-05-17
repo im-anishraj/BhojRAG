@@ -20,14 +20,14 @@ logger = setup_logger(__name__)
 class RetrievalMetrics:
     """
     Compute standard IR evaluation metrics.
-    
+
     Supports:
         - MRR@k (Mean Reciprocal Rank)
         - Recall@k
         - Precision@k
         - NDCG@k (Normalized Discounted Cumulative Gain)
         - MAP (Mean Average Precision)
-    
+
     Usage:
         metrics = RetrievalMetrics()
         results = {"q1": ["c1", "c2", "c3"], "q2": ["c4", "c1"]}
@@ -43,7 +43,7 @@ class RetrievalMetrics:
     ) -> float:
         """
         Mean Reciprocal Rank @ k.
-        
+
         For each query, finds the rank of the first relevant result.
         MRR = (1/|Q|) * Σ (1 / rank_first_relevant)
         """
@@ -71,7 +71,7 @@ class RetrievalMetrics:
     ) -> float:
         """
         Recall @ k.
-        
+
         Fraction of relevant documents retrieved in the top-k.
         Recall@k = |retrieved_k ∩ relevant| / |relevant|
         """
@@ -100,7 +100,7 @@ class RetrievalMetrics:
     ) -> float:
         """
         Precision @ k.
-        
+
         Fraction of top-k results that are relevant.
         P@k = |retrieved_k ∩ relevant| / k
         """
@@ -127,7 +127,7 @@ class RetrievalMetrics:
     ) -> float:
         """
         Normalized Discounted Cumulative Gain @ k.
-        
+
         Uses binary relevance (1 if relevant, 0 otherwise).
         NDCG = DCG / IDCG
         """
@@ -162,7 +162,7 @@ class RetrievalMetrics:
     ) -> float:
         """
         Mean Average Precision (MAP) over all queries.
-        
+
         AP = (1/|relevant|) * Σ_k (P@k * rel(k))
         """
         ap_sum = 0.0
@@ -195,7 +195,7 @@ class RetrievalMetrics:
     ) -> Dict[str, float]:
         """
         Compute all metrics at once.
-        
+
         Returns dict with keys: mrr@k, recall@k, ndcg@k, precision@k, map
         """
         return {
@@ -214,7 +214,7 @@ class RetrievalMetrics:
     ) -> Dict[str, Dict[str, float]]:
         """
         Compute metrics per-query for detailed error analysis.
-        
+
         Returns dict mapping query_id -> {metric_name: value}.
         """
         per_query: Dict[str, Dict[str, float]] = {}

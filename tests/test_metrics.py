@@ -3,6 +3,7 @@ Unit tests for IR evaluation metrics.
 """
 
 import pytest
+
 from src.eval.metrics import RetrievalMetrics
 
 

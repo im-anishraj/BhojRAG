@@ -7,7 +7,7 @@ All retriever implementations (sparse, dense, hybrid) inherit from this.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from src.data.chunker import Chunk
 
@@ -16,7 +16,7 @@ from src.data.chunker import Chunk
 class RetrievalResult:
     """
     A single retrieval result with score and metadata.
-    
+
     Attributes:
         chunk_id: ID of the retrieved chunk.
         text: Text content of the chunk.
@@ -25,6 +25,7 @@ class RetrievalResult:
         source: Source file/URL.
         metadata: Additional metadata.
     """
+
     chunk_id: str
     text: str
     score: float
@@ -36,11 +37,11 @@ class RetrievalResult:
 class BaseRetriever(ABC):
     """
     Abstract base class for all retrievers.
-    
+
     Subclasses must implement:
         - index(chunks): Build retrieval index from corpus chunks
         - retrieve(query, top_k): Retrieve top-k results for a query
-    
+
     Optional overrides:
         - save_index(path): Persist index to disk
         - load_index(path): Load index from disk
@@ -55,7 +56,7 @@ class BaseRetriever(ABC):
     def index(self, chunks: List[Chunk]) -> None:
         """
         Build retrieval index from corpus chunks.
-        
+
         Args:
             chunks: List of Chunk objects to index.
         """
@@ -65,11 +66,11 @@ class BaseRetriever(ABC):
     def retrieve(self, query: str, top_k: int = 10) -> List[RetrievalResult]:
         """
         Retrieve top-k chunks for a query.
-        
+
         Args:
             query: Query string.
             top_k: Number of results to return.
-            
+
         Returns:
             List of RetrievalResult objects sorted by score (descending).
         """
@@ -84,11 +85,11 @@ class BaseRetriever(ABC):
         Retrieve results for multiple queries.
         Default implementation: sequential calls to retrieve().
         Override in subclasses for batched efficiency.
-        
+
         Args:
             queries: List of query strings.
             top_k: Number of results per query.
-            
+
         Returns:
             List of result lists, one per query.
         """

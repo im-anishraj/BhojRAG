@@ -8,14 +8,13 @@ Generates question-answer pairs from corpus chunks for:
 Supports template-based and LLM-based generation.
 """
 
-import json
 import random
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from src.data.chunker import Chunk
-from src.utils.logger import setup_logger
 from src.utils.io import save_jsonl
+from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
@@ -46,11 +45,11 @@ HINDI_TEMPLATES = [
 class SyntheticQAGenerator:
     """
     Generate synthetic QA pairs from corpus chunks.
-    
+
     Modes:
         template: Uses predefined question templates with extracted snippets.
         llm: Calls an LLM API to generate questions (requires API key).
-    
+
     Usage:
         generator = SyntheticQAGenerator(method="template", num_per_chunk=2)
         qa_pairs = generator.generate(chunks)
@@ -72,10 +71,10 @@ class SyntheticQAGenerator:
     def generate(self, chunks: List[Chunk]) -> List[Dict[str, Any]]:
         """
         Generate QA pairs from chunks.
-        
+
         Args:
             chunks: List of Chunk objects.
-            
+
         Returns:
             List of dicts: {question, answer, chunk_id, source}
         """
@@ -104,16 +103,17 @@ class SyntheticQAGenerator:
                 template = self.rng.choice(self.templates)
                 question = template.format(snippet=snippet)
 
-                qa_pairs.append({
-                    "question": question,
-                    "answer": chunk.text,
-                    "chunk_id": chunk.chunk_id,
-                    "source": chunk.source,
-                })
+                qa_pairs.append(
+                    {
+                        "question": question,
+                        "answer": chunk.text,
+                        "chunk_id": chunk.chunk_id,
+                        "source": chunk.source,
+                    }
+                )
 
         logger.info(
-            f"Generated {len(qa_pairs)} template QA pairs from "
-            f"{len(chunks)} chunks"
+            f"Generated {len(qa_pairs)} template QA pairs from " f"{len(chunks)} chunks"
         )
         return qa_pairs
 
@@ -121,18 +121,19 @@ class SyntheticQAGenerator:
         """
         LLM-based QA generation.
         Calls an API-compatible LLM to generate questions for each chunk.
-        
+
         Requires OPENAI_API_KEY or GOOGLE_API_KEY in environment.
         """
         try:
             from openai import OpenAI
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
                 "openai package required for LLM-based QA generation. "
                 "Install with: pip install openai"
-            )
+            ) from exc
 
         import os
+
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         qa_pairs: List[Dict[str, Any]] = []
@@ -149,21 +150,26 @@ class SyntheticQAGenerator:
                     model="gpt-3.5-turbo",
                     messages=[
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": f"Passage:\n{chunk.text}\n\nGenerate {self.num_per_chunk} questions:"},
+                        {
+                            "role": "user",
+                            "content": f"Passage:\n{chunk.text}\n\nGenerate {self.num_per_chunk} questions:",
+                        },
                     ],
                     temperature=0.7,
                     max_tokens=256,
                 )
                 questions = response.choices[0].message.content.strip().split("\n")
-                for q in questions[:self.num_per_chunk]:
+                for q in questions[: self.num_per_chunk]:
                     q = q.strip().lstrip("0123456789.-) ")
                     if q:
-                        qa_pairs.append({
-                            "question": q,
-                            "answer": chunk.text,
-                            "chunk_id": chunk.chunk_id,
-                            "source": chunk.source,
-                        })
+                        qa_pairs.append(
+                            {
+                                "question": q,
+                                "answer": chunk.text,
+                                "chunk_id": chunk.chunk_id,
+                                "source": chunk.source,
+                            }
+                        )
             except Exception as e:
                 logger.warning(f"LLM QA generation failed for chunk {i}: {e}")
 

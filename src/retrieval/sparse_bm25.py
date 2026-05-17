@@ -21,10 +21,10 @@ logger = setup_logger(__name__)
 class WordBM25Retriever(BaseRetriever):
     """
     Standard word-level BM25 retriever using rank_bm25.
-    
+
     Tokenization: whitespace split (appropriate for Devanagari
     which uses spaces between words).
-    
+
     This is the baseline that character n-gram BM25 should outperform
     for orthographically inconsistent Bhojpuri text.
     """
@@ -43,7 +43,7 @@ class WordBM25Retriever(BaseRetriever):
     def index(self, chunks: List[Chunk]) -> None:
         """
         Build BM25 index from corpus chunks.
-        
+
         Tokenizes each chunk by whitespace and builds the
         BM25Okapi index with configurable k1 and b parameters.
         """
@@ -52,8 +52,7 @@ class WordBM25Retriever(BaseRetriever):
         self._bm25 = BM25Okapi(tokenized, k1=self.k1, b=self.b)
         self._indexed = True
         logger.info(
-            f"WordBM25: Indexed {len(chunks)} chunks "
-            f"(k1={self.k1}, b={self.b})"
+            f"WordBM25: Indexed {len(chunks)} chunks " f"(k1={self.k1}, b={self.b})"
         )
 
     def retrieve(self, query: str, top_k: int = 10) -> List[RetrievalResult]:
@@ -65,21 +64,23 @@ class WordBM25Retriever(BaseRetriever):
         scores = self._bm25.get_scores(query_tokens)
 
         # Get top-k indices sorted by score
-        top_indices = sorted(
-            range(len(scores)), key=lambda i: scores[i], reverse=True
-        )[:top_k]
+        top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[
+            :top_k
+        ]
 
         results = []
         for rank, idx in enumerate(top_indices, 1):
             chunk = self._corpus[idx]
-            results.append(RetrievalResult(
-                chunk_id=chunk.chunk_id,
-                text=chunk.text,
-                score=float(scores[idx]),
-                rank=rank,
-                source=chunk.source,
-                metadata={**chunk.metadata, "retriever": self.name},
-            ))
+            results.append(
+                RetrievalResult(
+                    chunk_id=chunk.chunk_id,
+                    text=chunk.text,
+                    score=float(scores[idx]),
+                    rank=rank,
+                    source=chunk.source,
+                    metadata={**chunk.metadata, "retriever": self.name},
+                )
+            )
         return results
 
     def save_index(self, path: str) -> None:

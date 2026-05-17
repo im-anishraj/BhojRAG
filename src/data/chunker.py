@@ -18,6 +18,7 @@ logger = setup_logger(__name__)
 @dataclass
 class Chunk:
     """A single text chunk derived from a document."""
+
     chunk_id: str
     text: str
     doc_id: str
@@ -29,7 +30,7 @@ class Chunk:
 class CorpusChunker:
     """
     Chunk documents using fixed-window or sentence-based strategies.
-    
+
     Usage:
         chunker = CorpusChunker(chunk_size=256, chunk_overlap=64)
         chunks = chunker.chunk_documents(documents)
@@ -79,14 +80,16 @@ class CorpusChunker:
         while i < len(words):
             window = words[i : i + self.chunk_size]
             chunk_text = " ".join(window)
-            chunks.append(Chunk(
-                chunk_id=f"{doc.doc_id}_c{chunk_idx:04d}",
-                text=chunk_text,
-                doc_id=doc.doc_id,
-                source=doc.source,
-                chunk_index=chunk_idx,
-                metadata={**doc.metadata, "chunk_method": "fixed"},
-            ))
+            chunks.append(
+                Chunk(
+                    chunk_id=f"{doc.doc_id}_c{chunk_idx:04d}",
+                    text=chunk_text,
+                    doc_id=doc.doc_id,
+                    source=doc.source,
+                    chunk_index=chunk_idx,
+                    metadata={**doc.metadata, "chunk_method": "fixed"},
+                )
+            )
             i += step
             chunk_idx += 1
             if i < len(words) and len(words) - i < self.chunk_overlap:
@@ -104,26 +107,33 @@ class CorpusChunker:
 
         for sentence in sentences:
             sentence_words = sentence.split()
-            if current_words and len(current_words) + len(sentence_words) > self.chunk_size:
-                chunks.append(Chunk(
+            if (
+                current_words
+                and len(current_words) + len(sentence_words) > self.chunk_size
+            ):
+                chunks.append(
+                    Chunk(
+                        chunk_id=f"{doc.doc_id}_c{chunk_idx:04d}",
+                        text=" ".join(current_words),
+                        doc_id=doc.doc_id,
+                        source=doc.source,
+                        chunk_index=chunk_idx,
+                        metadata={**doc.metadata, "chunk_method": "sentence"},
+                    )
+                )
+                chunk_idx += 1
+                current_words = current_words[-self.chunk_overlap :]
+            current_words.extend(sentence_words)
+
+        if current_words:
+            chunks.append(
+                Chunk(
                     chunk_id=f"{doc.doc_id}_c{chunk_idx:04d}",
                     text=" ".join(current_words),
                     doc_id=doc.doc_id,
                     source=doc.source,
                     chunk_index=chunk_idx,
                     metadata={**doc.metadata, "chunk_method": "sentence"},
-                ))
-                chunk_idx += 1
-                current_words = current_words[-self.chunk_overlap:]
-            current_words.extend(sentence_words)
-
-        if current_words:
-            chunks.append(Chunk(
-                chunk_id=f"{doc.doc_id}_c{chunk_idx:04d}",
-                text=" ".join(current_words),
-                doc_id=doc.doc_id,
-                source=doc.source,
-                chunk_index=chunk_idx,
-                metadata={**doc.metadata, "chunk_method": "sentence"},
-            ))
+                )
+            )
         return chunks

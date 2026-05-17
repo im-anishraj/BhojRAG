@@ -3,7 +3,7 @@ Unit tests for hybrid retriever (RRF fusion).
 """
 
 import pytest
-from src.data.chunker import Chunk
+
 from src.retrieval.base import BaseRetriever, RetrievalResult
 from src.retrieval.hybrid import HybridRetriever
 
@@ -52,7 +52,9 @@ class TestHybridRetriever:
     def test_rrf_fusion(self, mock_retrievers):
         sparse, dense = mock_retrievers
         hybrid = HybridRetriever(
-            retrievers=[sparse, dense], method="rrf", rrf_k=60,
+            retrievers=[sparse, dense],
+            method="rrf",
+            rrf_k=60,
         )
         hybrid._indexed = True
 
@@ -67,7 +69,9 @@ class TestHybridRetriever:
     def test_rrf_rank_ordering(self, mock_retrievers):
         sparse, dense = mock_retrievers
         hybrid = HybridRetriever(
-            retrievers=[sparse, dense], method="rrf", rrf_k=60,
+            retrievers=[sparse, dense],
+            method="rrf",
+            rrf_k=60,
         )
         hybrid._indexed = True
 
@@ -91,7 +95,8 @@ class TestHybridRetriever:
     def test_empty_query(self, mock_retrievers):
         sparse, dense = mock_retrievers
         hybrid = HybridRetriever(
-            retrievers=[sparse, dense], method="rrf",
+            retrievers=[sparse, dense],
+            method="rrf",
         )
         hybrid._indexed = True
 

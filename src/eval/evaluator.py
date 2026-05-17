@@ -10,11 +10,10 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from src.data.chunker import Chunk
 from src.eval.metrics import RetrievalMetrics
 from src.retrieval.base import BaseRetriever
-from src.utils.io import load_jsonl, ensure_dir
-from src.utils.logger import setup_logger, ExperimentTracker
+from src.utils.io import ensure_dir, load_jsonl
+from src.utils.logger import ExperimentTracker, setup_logger
 
 logger = setup_logger(__name__)
 
@@ -82,8 +81,7 @@ class RetrieverEvaluator:
                 gold[qid].add(chunk_id)
 
         logger.info(
-            f"Loaded {len(records)} eval queries with "
-            f"{len(gold)} gold judgments"
+            f"Loaded {len(records)} eval queries with " f"{len(gold)} gold judgments"
         )
 
         return records, gold
@@ -197,16 +195,12 @@ class RetrieverEvaluator:
 
                 safe_metrics = {
                     f"{name}/{metric_name.replace('@', '_at_')}": value
-                    for metric_name, value in result[
-                        "aggregate_metrics"
-                    ].items()
+                    for metric_name, value in result["aggregate_metrics"].items()
                 }
 
                 self.tracker.log_metrics(safe_metrics)
 
-            logger.info(
-                f"{name}: {result['aggregate_metrics']}"
-            )
+            logger.info(f"{name}: {result['aggregate_metrics']}")
 
         # Save outputs
         self._save_aggregate_csv(all_aggregate)
@@ -223,16 +217,12 @@ class RetrieverEvaluator:
         Save aggregate comparison table as CSV.
         """
 
-        output_path = (
-            self.results_dir / "aggregate_results.csv"
-        )
+        output_path = self.results_dir / "aggregate_results.csv"
 
         if not results:
             return
 
-        metric_names = list(
-            next(iter(results.values())).keys()
-        )
+        metric_names = list(next(iter(results.values())).keys())
 
         with open(
             output_path,
@@ -243,24 +233,15 @@ class RetrieverEvaluator:
 
             writer = csv.writer(f)
 
-            writer.writerow(
-                ["retriever"] + metric_names
-            )
+            writer.writerow(["retriever"] + metric_names)
 
             for name, metrics in results.items():
 
-                row = [
-                    name
-                ] + [
-                    f"{metrics[m]:.4f}"
-                    for m in metric_names
-                ]
+                row = [name] + [f"{metrics[m]:.4f}" for m in metric_names]
 
                 writer.writerow(row)
 
-        logger.info(
-            f"Saved aggregate results to {output_path}"
-        )
+        logger.info(f"Saved aggregate results to {output_path}")
 
     def _save_details_json(
         self,
@@ -270,9 +251,7 @@ class RetrieverEvaluator:
         Save detailed per-query results as JSON.
         """
 
-        output_path = (
-            self.results_dir / "detailed_results.json"
-        )
+        output_path = self.results_dir / "detailed_results.json"
 
         with open(
             output_path,
@@ -287,6 +266,4 @@ class RetrieverEvaluator:
                 ensure_ascii=False,
             )
 
-        logger.info(
-            f"Saved detailed results to {output_path}"
-        )
+        logger.info(f"Saved detailed results to {output_path}")

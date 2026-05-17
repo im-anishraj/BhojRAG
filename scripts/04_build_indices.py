@@ -19,14 +19,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.utils.config import load_config
-from src.utils.seed import set_seed
-from src.utils.logger import setup_logger
-from src.utils.io import load_jsonl, ensure_dir
 from src.data.chunker import Chunk
+from src.retrieval.dense_retriever import DenseRetriever
 from src.retrieval.sparse_bm25 import WordBM25Retriever
 from src.retrieval.sparse_ngram_bm25 import CharNgramBM25Retriever
-from src.retrieval.dense_retriever import DenseRetriever
+from src.utils.config import load_config
+from src.utils.io import ensure_dir, load_jsonl
+from src.utils.logger import setup_logger
+from src.utils.seed import set_seed
 
 logger = setup_logger(__name__)
 
@@ -81,8 +81,10 @@ def main(config_path: str = "configs/default.yaml") -> None:
 
     # Quick sanity check
     test_results = word_bm25.retrieve("भोजपुरी भाषा", top_k=3)
-    logger.info(f"  Sanity check — top result: {test_results[0].chunk_id} "
-                f"(score={test_results[0].score:.3f})")
+    logger.info(
+        f"  Sanity check — top result: {test_results[0].chunk_id} "
+        f"(score={test_results[0].score:.3f})"
+    )
 
     # ---------------------------------------------------------------
     # 2. Character n-gram BM25
@@ -97,8 +99,10 @@ def main(config_path: str = "configs/default.yaml") -> None:
     ngram_bm25.save_index(str(index_dir / "ngram_bm25.pkl"))
 
     test_results = ngram_bm25.retrieve("भोजपूरी भासा", top_k=3)  # variant spelling
-    logger.info(f"  Sanity check (variant) — top result: {test_results[0].chunk_id} "
-                f"(score={test_results[0].score:.3f})")
+    logger.info(
+        f"  Sanity check (variant) — top result: {test_results[0].chunk_id} "
+        f"(score={test_results[0].score:.3f})"
+    )
 
     # ---------------------------------------------------------------
     # 3. Zero-shot dense (pretrained MuRIL)
@@ -117,8 +121,10 @@ def main(config_path: str = "configs/default.yaml") -> None:
     zeroshot_dense.save_index(str(index_dir / "dense_zeroshot"))
 
     test_results = zeroshot_dense.retrieve("भोजपुरी के इतिहास", top_k=3)
-    logger.info(f"  Sanity check — top result: {test_results[0].chunk_id} "
-                f"(score={test_results[0].score:.3f})")
+    logger.info(
+        f"  Sanity check — top result: {test_results[0].chunk_id} "
+        f"(score={test_results[0].score:.3f})"
+    )
 
     # ---------------------------------------------------------------
     # 4. Fine-tuned dense (if checkpoint exists)
@@ -138,11 +144,15 @@ def main(config_path: str = "configs/default.yaml") -> None:
         finetuned_dense.save_index(str(index_dir / "dense_finetuned"))
 
         test_results = finetuned_dense.retrieve("भोजपुरी के इतिहास", top_k=3)
-        logger.info(f"  Sanity check — top result: {test_results[0].chunk_id} "
-                    f"(score={test_results[0].score:.3f})")
+        logger.info(
+            f"  Sanity check — top result: {test_results[0].chunk_id} "
+            f"(score={test_results[0].score:.3f})"
+        )
     else:
-        logger.info("[4/4] Skipping fine-tuned dense index "
-                    f"(no checkpoint at {finetuned_path})")
+        logger.info(
+            "[4/4] Skipping fine-tuned dense index "
+            f"(no checkpoint at {finetuned_path})"
+        )
         logger.info("  Run scripts/03_train_dense.py to create one.")
 
     logger.info("=" * 60)
@@ -154,7 +164,9 @@ def main(config_path: str = "configs/default.yaml") -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BhojRAG Build Indices")
     parser.add_argument(
-        "--config", type=str, default="configs/default.yaml",
+        "--config",
+        type=str,
+        default="configs/default.yaml",
         help="Path to config file",
     )
     args = parser.parse_args()

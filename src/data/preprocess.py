@@ -9,7 +9,7 @@ for Hinglish / Latin-script Bhojpuri.
 import hashlib
 import re
 import unicodedata
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Set
 
 from src.data.ingest import Document
 from src.utils.logger import setup_logger
@@ -23,27 +23,70 @@ logger = setup_logger(__name__)
 # This covers common Hinglish / romanized Bhojpuri spellings.
 # For production, use a learned or rule-based transliteration model.
 LATIN_TO_DEVANAGARI: Dict[str, str] = {
-    "a": "अ", "aa": "आ", "i": "इ", "ee": "ई", "u": "उ", "oo": "ऊ",
-    "e": "ए", "ai": "ऐ", "o": "ओ", "au": "औ",
-    "ka": "क", "kha": "ख", "ga": "ग", "gha": "घ",
-    "cha": "च", "chha": "छ", "ja": "ज", "jha": "झ",
-    "ta": "ट", "tha": "ठ", "da": "ड", "dha": "ढ",
-    "na": "न", "pa": "प", "pha": "फ", "ba": "ब", "bha": "भ",
-    "ma": "म", "ya": "य", "ra": "र", "la": "ल", "va": "व",
-    "wa": "व", "sha": "श", "sa": "स", "ha": "ह",
-    "kya": "क्या", "gya": "ज्ञ",
-    "ri": "रि", "re": "रे", "ro": "रो", "ru": "रु",
-    "se": "से", "ke": "के", "me": "में", "ko": "को",
-    "ki": "कि", "hi": "हि", "ho": "हो", "he": "हे",
-    "nahi": "नहीं", "hai": "है", "hain": "हैं", "tha": "था",
-    "aur": "और", "par": "पर", "bhi": "भी", "koi": "कोई",
+    "a": "अ",
+    "aa": "आ",
+    "i": "इ",
+    "ee": "ई",
+    "u": "उ",
+    "oo": "ऊ",
+    "e": "ए",
+    "ai": "ऐ",
+    "o": "ओ",
+    "au": "औ",
+    "ka": "क",
+    "kha": "ख",
+    "ga": "ग",
+    "gha": "घ",
+    "cha": "च",
+    "chha": "छ",
+    "ja": "ज",
+    "jha": "झ",
+    "ta": "ट",
+    "da": "ड",
+    "dha": "ढ",
+    "na": "न",
+    "pa": "प",
+    "pha": "फ",
+    "ba": "ब",
+    "bha": "भ",
+    "ma": "म",
+    "ya": "य",
+    "ra": "र",
+    "la": "ल",
+    "va": "व",
+    "wa": "व",
+    "sha": "श",
+    "sa": "स",
+    "ha": "ह",
+    "kya": "क्या",
+    "gya": "ज्ञ",
+    "ri": "रि",
+    "re": "रे",
+    "ro": "रो",
+    "ru": "रु",
+    "se": "से",
+    "ke": "के",
+    "me": "में",
+    "ko": "को",
+    "ki": "कि",
+    "hi": "हि",
+    "ho": "हो",
+    "he": "हे",
+    "nahi": "नहीं",
+    "hai": "है",
+    "hain": "हैं",
+    "tha": "था",
+    "aur": "और",
+    "par": "पर",
+    "bhi": "भी",
+    "koi": "कोई",
 }
 
 
 class TextPreprocessor:
     """
     Text preprocessing pipeline for Bhojpuri text.
-    
+
     Steps (configurable):
         1. Unicode normalization (NFC/NFKC)
         2. Remove URLs, emails, control characters
@@ -52,7 +95,7 @@ class TextPreprocessor:
         5. Whitespace normalization
         6. Length filtering
         7. Deduplication (exact hash)
-    
+
     Usage:
         preprocessor = TextPreprocessor(
             normalize_unicode=True,
@@ -84,16 +127,20 @@ class TextPreprocessor:
     def process(self, documents: List[Document]) -> List[Document]:
         """
         Apply full preprocessing pipeline to a list of documents.
-        
+
         Args:
             documents: Raw Document objects.
-            
+
         Returns:
             Cleaned and filtered Document objects.
         """
         cleaned: List[Document] = []
-        stats = {"total": len(documents), "kept": 0, "removed_short": 0,
-                 "removed_dup": 0}
+        stats = {
+            "total": len(documents),
+            "kept": 0,
+            "removed_short": 0,
+            "removed_dup": 0,
+        }
 
         for doc in documents:
             text = self.clean_text(doc.text)
@@ -111,12 +158,14 @@ class TextPreprocessor:
                     continue
                 self._seen_hashes.add(text_hash)
 
-            cleaned.append(Document(
-                doc_id=doc.doc_id,
-                text=text,
-                source=doc.source,
-                metadata=doc.metadata,
-            ))
+            cleaned.append(
+                Document(
+                    doc_id=doc.doc_id,
+                    text=text,
+                    source=doc.source,
+                    metadata=doc.metadata,
+                )
+            )
             stats["kept"] += 1
 
         logger.info(
@@ -128,10 +177,10 @@ class TextPreprocessor:
     def clean_text(self, text: str) -> str:
         """
         Apply all text-level cleaning steps.
-        
+
         Args:
             text: Raw text string.
-            
+
         Returns:
             Cleaned text string.
         """
@@ -141,15 +190,11 @@ class TextPreprocessor:
 
         # 2. Remove URLs
         if self.remove_urls:
-            text = re.sub(
-                r"https?://\S+|www\.\S+", "", text
-            )
+            text = re.sub(r"https?://\S+|www\.\S+", "", text)
 
         # 3. Remove emails
         if self.remove_emails:
-            text = re.sub(
-                r"\S+@\S+\.\S+", "", text
-            )
+            text = re.sub(r"\S+@\S+\.\S+", "", text)
 
         # 4. Remove control characters (keep Devanagari, punctuation, digits)
         text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]", "", text)
@@ -199,10 +244,10 @@ class TextPreprocessor:
     def _transliterate_latin_to_devanagari(text: str) -> str:
         """
         Basic rule-based transliteration from Latin/Hinglish to Devanagari.
-        
+
         This is a coarse heuristic. For research, consider integrating
         IndicNLP or a learned transliteration model for higher accuracy.
-        
+
         Only transliterates words that appear fully Latin-script.
         """
         words = text.split()

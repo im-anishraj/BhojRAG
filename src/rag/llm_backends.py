@@ -33,12 +33,12 @@ class BaseLLM(ABC):
 class APIBackend(BaseLLM):
     """
     API-based LLM backend using OpenAI-compatible chat completions.
-    
+
     Works with:
         - OpenAI GPT models
         - Google Gemini (via OpenAI-compatible endpoint)
         - Any OpenAI-compatible API (vLLM, Ollama, etc.)
-    
+
     API key is read from environment:
         - OPENAI_API_KEY (default)
         - GOOGLE_API_KEY (for Gemini)
@@ -59,38 +59,36 @@ class APIBackend(BaseLLM):
         if "gemini" in model.lower():
             try:
                 import google.generativeai as genai
+
                 api_key = os.getenv("GOOGLE_API_KEY")
                 if not api_key:
-                    raise ValueError(
-                        "GOOGLE_API_KEY environment variable not set."
-                    )
+                    raise ValueError("GOOGLE_API_KEY environment variable not set.")
                 genai.configure(api_key=api_key)
                 self._client_type = "gemini"
                 self._gemini_model = genai.GenerativeModel(model)
                 logger.info(f"Initialized Gemini backend: {model}")
-            except ImportError:
+            except ImportError as exc:
                 raise ImportError(
                     "google-generativeai package required for Gemini. "
                     "Install with: pip install google-generativeai"
-                )
+                ) from exc
         else:
             try:
                 from openai import OpenAI
+
                 api_key = os.getenv("OPENAI_API_KEY")
                 if not api_key:
-                    raise ValueError(
-                        "OPENAI_API_KEY environment variable not set."
-                    )
+                    raise ValueError("OPENAI_API_KEY environment variable not set.")
                 kwargs = {"api_key": api_key}
                 if api_base_url:
                     kwargs["base_url"] = api_base_url
                 self._client = OpenAI(**kwargs)
                 self._client_type = "openai"
                 logger.info(f"Initialized OpenAI backend: {model}")
-            except ImportError:
+            except ImportError as exc:
                 raise ImportError(
                     "openai package required. Install with: pip install openai"
-                )
+                ) from exc
 
     def generate(self, prompt: str) -> str:
         """Generate response via API call."""
@@ -125,7 +123,7 @@ class APIBackend(BaseLLM):
 class LocalBackend(BaseLLM):
     """
     Local HuggingFace model backend.
-    
+
     Supports:
         - Standard transformers pipeline
         - Optional quantization (4-bit, 8-bit via bitsandbytes)
@@ -153,7 +151,7 @@ class LocalBackend(BaseLLM):
             return
 
         import torch
-        from transformers import pipeline, AutoModelForCausalLM, AutoTokenizer
+        from transformers import pipeline
 
         logger.info(f"Loading local model: {self.model_name}")
 
@@ -161,12 +159,14 @@ class LocalBackend(BaseLLM):
 
         if self._quantization == "4bit":
             from transformers import BitsAndBytesConfig
+
             model_kwargs["quantization_config"] = BitsAndBytesConfig(
                 load_in_4bit=True,
                 bnb_4bit_compute_dtype=torch.float16,
             )
         elif self._quantization == "8bit":
             from transformers import BitsAndBytesConfig
+
             model_kwargs["quantization_config"] = BitsAndBytesConfig(
                 load_in_8bit=True,
             )
@@ -211,7 +211,7 @@ def get_llm(
 ) -> BaseLLM:
     """
     Factory function to create an LLM backend.
-    
+
     Args:
         backend: "api" or "local"
         model: Model name/identifier
@@ -220,7 +220,7 @@ def get_llm(
         max_tokens: Maximum tokens to generate
         quantization: Quantization mode for local models ("4bit", "8bit", None)
         device: Device for local models ("auto", "cuda", "cpu")
-        
+
     Returns:
         BaseLLM instance.
     """

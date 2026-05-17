@@ -8,7 +8,7 @@ Produces a unified list of Document objects for downstream processing.
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from src.utils.logger import setup_logger
 
@@ -19,13 +19,14 @@ logger = setup_logger(__name__)
 class Document:
     """
     A single ingested document.
-    
+
     Attributes:
         doc_id: Unique identifier.
         text: Raw document text.
         source: Source file path or URL.
         metadata: Arbitrary metadata (e.g., page number, title).
     """
+
     doc_id: str
     text: str
     source: str
@@ -35,13 +36,13 @@ class Document:
 class DocumentLoader:
     """
     Multi-format document loader.
-    
+
     Supports:
         - .txt files (one document per file or paragraph-split)
         - .jsonl files (expects {"text": ..., "metadata": ...} per line)
         - .pdf files (requires PyPDF2; optional dependency)
         - directories (recursively loads all supported files)
-    
+
     Usage:
         loader = DocumentLoader()
         docs = loader.load("data/raw/")
@@ -52,10 +53,10 @@ class DocumentLoader:
     def load(self, path: str | Path) -> List[Document]:
         """
         Load documents from a file or directory.
-        
+
         Args:
             path: Path to a single file or directory.
-            
+
         Returns:
             List of Document objects.
         """
@@ -101,12 +102,14 @@ class DocumentLoader:
 
         docs = []
         for i, para in enumerate(paragraphs):
-            docs.append(Document(
-                doc_id=f"{file_path.stem}_{i:04d}",
-                text=para,
-                source=str(file_path),
-                metadata={"paragraph_index": str(i)},
-            ))
+            docs.append(
+                Document(
+                    doc_id=f"{file_path.stem}_{i:04d}",
+                    text=para,
+                    source=str(file_path),
+                    metadata={"paragraph_index": str(i)},
+                )
+            )
 
         logger.info(f"Loaded {len(docs)} paragraphs from {file_path}")
         return docs
@@ -125,12 +128,14 @@ class DocumentLoader:
                 if not line:
                     continue
                 record = json.loads(line)
-                docs.append(Document(
-                    doc_id=f"{file_path.stem}_{i:04d}",
-                    text=record["text"],
-                    source=str(file_path),
-                    metadata=record.get("metadata", {}),
-                ))
+                docs.append(
+                    Document(
+                        doc_id=f"{file_path.stem}_{i:04d}",
+                        text=record["text"],
+                        source=str(file_path),
+                        metadata=record.get("metadata", {}),
+                    )
+                )
 
         logger.info(f"Loaded {len(docs)} records from {file_path}")
         return docs
@@ -143,9 +148,7 @@ class DocumentLoader:
         try:
             from PyPDF2 import PdfReader
         except ImportError:
-            logger.error(
-                "PyPDF2 not installed. Install with: pip install PyPDF2"
-            )
+            logger.error("PyPDF2 not installed. Install with: pip install PyPDF2")
             return []
 
         reader = PdfReader(str(file_path))
@@ -153,12 +156,14 @@ class DocumentLoader:
         for page_num, page in enumerate(reader.pages):
             text = page.extract_text()
             if text and text.strip():
-                docs.append(Document(
-                    doc_id=f"{file_path.stem}_p{page_num:04d}",
-                    text=text.strip(),
-                    source=str(file_path),
-                    metadata={"page_number": str(page_num)},
-                ))
+                docs.append(
+                    Document(
+                        doc_id=f"{file_path.stem}_p{page_num:04d}",
+                        text=text.strip(),
+                        source=str(file_path),
+                        metadata={"page_number": str(page_num)},
+                    )
+                )
 
         logger.info(f"Loaded {len(docs)} pages from {file_path}")
         return docs

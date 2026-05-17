@@ -8,9 +8,9 @@ Retrieves relevant chunks, assembles context, generates grounded answers.
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from src.retrieval.base import BaseRetriever, RetrievalResult
-from src.rag.llm_backends import BaseLLM, get_llm
+from src.rag.llm_backends import BaseLLM
 from src.rag.prompts import PromptTemplates
+from src.retrieval.base import BaseRetriever, RetrievalResult
 from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -20,7 +20,7 @@ logger = setup_logger(__name__)
 class RAGResponse:
     """
     Complete RAG response with provenance tracking.
-    
+
     Attributes:
         query: Original user query.
         answer: Generated answer text.
@@ -30,6 +30,7 @@ class RAGResponse:
         retriever_name: Retriever used for context retrieval.
         metadata: Additional metadata (timings, scores, etc.).
     """
+
     query: str
     answer: str
     sources: List[RetrievalResult]
@@ -62,10 +63,10 @@ class RAGResponse:
 class RAGGenerator:
     """
     RAG pipeline: retrieve → assemble context → generate answer.
-    
+
     Supports multiple prompt strategies and LLM backends.
     Tracks provenance (which chunks were used, what prompt was sent).
-    
+
     Usage:
         generator = RAGGenerator(
             retriever=hybrid_retriever,
@@ -99,19 +100,19 @@ class RAGGenerator:
     ) -> RAGResponse:
         """
         Generate a grounded answer for a query.
-        
+
         Steps:
             1. Retrieve top-k relevant chunks
             2. Assemble context from retrieved chunks
             3. Format prompt using selected template
             4. Call LLM to generate answer
             5. Return RAGResponse with full provenance
-        
+
         Args:
             query: User query string.
             top_k: Override default top_k_context.
             template_override: Override default prompt template.
-            
+
         Returns:
             RAGResponse with answer, sources, and metadata.
         """
